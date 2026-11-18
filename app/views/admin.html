@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{SITE_NAME}} · Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-screen" class="login-screen" hidden>
+    <div class="login-card">
+      <div class="brand brand-lg"><span class="mark" data-icon="logo"></span>{{SITE_NAME}}</div>
+      <div id="login-body"></div>
+    </div>
+    <p class="login-foot">Admin login. Files are stored on Telegram.</p>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="mark" data-icon="logo"></span>{{SITE_NAME}}<span class="admin-tag">Admin</span></div>
+
+      <button class="btn primary btn-block" id="upload-btn"><span data-icon="upload"></span>Upload</button>
+
+      <nav class="nav">
+        <a class="nav-item" href="#/" data-view="all"><span data-icon="image"></span>All uploads<span class="count" id="count-all"></span></a>
+        <a class="nav-item" href="#/files" data-view="files"><span data-icon="drive"></span>My files</a>
+        <a class="nav-item" href="#/public" data-view="public"><span data-icon="users"></span>Public uploads<span class="count" id="count-public"></span></a>
+        <a class="nav-item" href="#/shared" data-view="shared"><span data-icon="link"></span>Shared links<span class="count" id="count-shared"></span></a>
+      </nav>
+
+      <div class="nav-section">
+        <div class="nav-heading">
+          Folders
+          <button class="icon-btn sm" id="sidebar-new-folder" title="New folder"><span data-icon="plus"></span></button>
+        </div>
+        <nav class="nav" id="folder-nav"></nav>
+      </div>
+
+      <div class="sidebar-foot">
+        <a class="site-link" id="site-link" target="_blank" rel="noopener">
+          <span data-icon="globe"></span>
+          <span class="site-link-text"><strong>Public site</strong><span class="muted xs" id="site-url"></span></span>
+          <span data-icon="external"></span>
+        </a>
+        <div class="storage">
+          <div class="storage-label"><span data-icon="cloud"></span><span id="storage-text">—</span></div>
+          <p class="muted xs">Unlimited storage on Telegram</p>
+        </div>
+        <div class="account">
+          <div class="avatar" id="avatar"></div>
+          <div class="account-text">
+            <div class="account-name" id="account-name"></div>
+            <div class="muted xs" id="account-handle"></div>
+          </div>
+          <button class="icon-btn" id="logout" title="Sign out"><span data-icon="logout"></span></button>
+        </div>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menu-btn" title="Menu"><span data-icon="menu"></span></button>
+        <label class="search">
+          <span data-icon="search"></span>
+          <input id="search" type="search" placeholder="Search files" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <div class="segmented" id="view-toggle">
+          <button data-layout="grid" title="Grid view"><span data-icon="grid"></span></button>
+          <button data-layout="list" title="List view"><span data-icon="list"></span></button>
+        </div>
+      </header>
+
+      <section class="content" id="content">
+        <div class="page-head">
+          <div>
+            <nav class="crumbs" id="crumbs"></nav>
+            <p class="muted sm" id="page-sub"></p>
+          </div>
+          <div class="page-actions" id="page-actions"></div>
+        </div>
+        <div class="folder-grid" id="folders"></div>
+        <div id="files"></div>
+        <div class="empty" id="empty" hidden></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="drop-overlay" id="drop-overlay" hidden>
+    <div class="drop-box">
+      <span data-icon="upload"></span>
+      <h2>Drop to upload</h2>
+      <p id="drop-target"></p>
+    </div>
+  </div>
+
+  <div class="upload-panel" id="upload-panel" hidden>
+    <div class="upload-head">
+      <strong id="upload-title"></strong>
+      <button class="icon-btn sm" id="upload-close" title="Close"><span data-icon="x"></span></button>
+    </div>
+    <div class="upload-list" id="upload-list"></div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <dialog class="viewer" id="viewer"></dialog>
+  <input id="file-input" type="file" multiple hidden>
+
+  <script src="/icons.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

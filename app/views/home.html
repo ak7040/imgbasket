@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{SITE_NAME}} — Free Image Hosting &amp; Photo Sharing, No Sign-Up</title>
+  <meta name="description" content="{{DESCRIPTION}}">
+  <link rel="canonical" href="{{SITE_URL}}/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  {{HEAD}}
+  <meta property="og:site_name" content="{{SITE_NAME}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{SITE_URL}}/">
+  <meta property="og:title" content="{{SITE_NAME}} — Free Image Hosting, Share in Seconds">
+  <meta property="og:description" content="{{DESCRIPTION}}">
+  <meta property="og:image" content="{{SITE_URL}}/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{SITE_NAME}}: free image hosting">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{SITE_NAME}} — Free Image Hosting, Share in Seconds">
+  <meta name="twitter:description" content="{{DESCRIPTION}}">
+  <meta name="twitter:image" content="{{SITE_URL}}/og-image.png">
+  <link rel="stylesheet" href="/site.css">
+  {{JSONLD}}
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="{{SITE_NAME}} home"><span class="mark" data-icon="logo"></span>{{SITE_NAME}}</a>
+    <button class="btn primary" id="header-upload"><span data-icon="upload"></span>Upload</button>
+  </header>
+
+  <main>
+    <section class="hero" id="hero" tabindex="0" role="button" aria-label="Upload images">
+      <div class="hero-icon" data-icon="image"></div>
+      <h1>Free image hosting. Share in seconds.</h1>
+      <p>Drop images here, paste from your clipboard, or choose files. No account needed.</p>
+      <span class="btn primary"><span data-icon="upload"></span>Choose images</span>
+      <p class="hint" id="limits"></p>
+      <label class="visibility" id="visibility">
+        <input type="checkbox" id="public-toggle" checked>
+        <span class="switch"></span>
+        <span class="visibility-text">
+          <strong>Show in public gallery</strong>
+          <span id="visibility-hint">Anyone visiting this site can see it</span>
+        </span>
+      </label>
+    </section>
+
+    <div class="results" id="results"></div>
+
+    <section aria-labelledby="recent-title">
+      <div class="section-head">
+        <h2 id="recent-title">Recent uploads</h2>
+      </div>
+      <div class="masonry" id="gallery"></div>
+      <div class="gallery-empty" id="gallery-empty" hidden>No images yet. Be the first to upload one.</div>
+      <div class="loading-more" id="loading" hidden><div class="spinner"></div></div>
+      <div class="sentinel" id="sentinel"></div>
+    </section>
+
+    <section class="features" aria-labelledby="features-title">
+      <h2 id="features-title">Why {{SITE_NAME}}</h2>
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="feature-icon" data-icon="users"></span>
+          <h3>No account needed</h3>
+          <p>Upload straight from your browser. No sign-up, no email, no waiting.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" data-icon="link"></span>
+          <h3>Direct links &amp; embeds</h3>
+          <p>Get a page link, a direct image link, and ready-made Markdown, HTML and BBCode for forums, Reddit and blogs.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" data-icon="eyeOff"></span>
+          <h3>Public or unlisted</h3>
+          <p>Show an image in the gallery, or keep it unlisted so only people with the link can see it.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" data-icon="image"></span>
+          <h3>Rich link previews</h3>
+          <p>Shared links show the picture in WhatsApp, Telegram, Discord, X and Facebook.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" data-icon="upload"></span>
+          <h3>Large images welcome</h3>
+          <p>JPG, PNG, GIF, WebP, AVIF and BMP up to {{MAX_UPLOAD}}. Paste screenshots with Ctrl + V.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" data-icon="cloud"></span>
+          <h3>Free</h3>
+          <p>Free image hosting with fast, lightweight pages that work on any phone or computer.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <details>
+        <summary>Is {{SITE_NAME}} free?</summary>
+        <p>Yes. Uploading, sharing and viewing images is free, and you don't need an account.</p>
+      </details>
+      <details>
+        <summary>How do I share an image?</summary>
+        <p>Upload it, then copy one of the links shown under it. The page link opens the image on {{SITE_NAME}}; the direct link points at the image file itself.</p>
+      </details>
+      <details>
+        <summary>How do I post an image in a forum or on Reddit?</summary>
+        <p>After uploading, pick the BBCode tab for most forums, or Markdown for Reddit, GitHub and Discord, then copy and paste it into your post.</p>
+      </details>
+      <details>
+        <summary>Can I keep an image private?</summary>
+        <p>Turn off "Show in public gallery" before uploading. The image won't appear in the gallery or in search engines, but anyone you send the link to can open it.</p>
+      </details>
+      <details>
+        <summary>Which file types can I upload?</summary>
+        <p>JPG, PNG, GIF (animated too), WebP, AVIF and BMP images, up to {{MAX_UPLOAD}} each.</p>
+      </details>
+      <details>
+        <summary>How do I get an image removed?</summary>
+        <p>Use the Report link on the image's page or email <a href="mailto:{{CONTACT}}">{{CONTACT}}</a> with the link.</p>
+      </details>
+    </section>
+  </main>
+
+  {{FOOTER}}
+
+  <div class="drop-overlay" id="drop-overlay" hidden>
+    <div class="drop-box">
+      <span data-icon="upload"></span>
+      <h2>Drop to upload</h2>
+      <p class="muted" id="drop-hint">Images will be published to the gallery</p>
+    </div>
+  </div>
+  <div class="toasts" id="toasts"></div>
+  <input id="file-input" type="file" accept="image/*" multiple hidden>
+
+  <script src="/icons.js"></script>
+  <script src="/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<?php
+// Copy this file to config.php (same folder) and fill it in.
+return [
+    // Shown in the header, page titles and link previews
+    'site_name' => 'ImgBasket',
+
+    // Used in search results and link previews of the home page
+    'site_description' => 'Free image hosting: upload images and get shareable links in seconds. Direct links, Markdown, HTML and BBCode for forums. No account needed.',
+
+    // Shown on the Terms, Privacy and Report links, for takedown requests and questions
+    'contact_email' => 'support@imgbasket.com',
+
+    // Optional: the code from Google Search Console's "HTML tag" verification method
+    'google_site_verification' => '',
+
+    // Your site's address, without a trailing slash. Used in share links and link previews.
+    'public_url' => 'https://imgbasket.com',
+
+    // Password for https://your-site/admin. Use a long, unique one.
+    'admin_password' => '',
+
+    // hPanel > Databases > MySQL Databases
+    'db' => [
+        'host' => 'localhost',
+        'name' => '',
+        'user' => '',
+        'pass' => '',
+    ],
+
+    'telegram' => [
+        // From @BotFather (/newbot)
+        'bot_token' => '',
+        // Your private channel's ID, usually starting with -100. Leave empty at first: the admin
+        // page then lists the chats your bot can see.
+        'channel_id' => '',
+        // Only change this if you run your own Bot API server
+        'api_base' => 'https://api.telegram.org',
+    ],
+
+    // Visitors' uploads: max size in bytes (0 = only PHP's upload limit) and uploads per IP per hour
+    'public_max_upload' => 0,
+    'public_uploads_per_hour' => 30,
+
+    // Files up to this size are kept on the server's disk, so they load fast and don't hit Telegram
+    'cache_max_file' => 25 * 1024 * 1024,
+
+    // Where the visitor's IP comes from. Leave empty to use the connection's address. If every
+    // upload shows the same IP (because a CDN or proxy sits in front), set e.g. 'HTTP_X_FORWARDED_FOR'.
+    'ip_header' => '',
+];
