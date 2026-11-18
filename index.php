@@ -11,6 +11,26 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $adminApi = false;
 
+// Fatal errors (time or memory limits, a missing extension...) skip the catch below. Report them the
+// same way: the signed-in admin sees the message, everyone else a generic one.
+register_shutdown_function(function () use (&$adminApi): void {
+    $error = error_get_last();
+    if (!$error || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+    error_log("ImgBasket fatal: {$error['message']} in {$error['file']}:{$error['line']}");
+    if (!$adminApi || headers_sent()) return;
+    $signedIn = false;
+    try {
+        $signedIn = is_admin();
+    } catch (Throwable) {
+    }
+    while (ob_get_level() > 0) ob_end_clean();
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => $signedIn
+        ? "Server error: {$error['message']} ({$error['file']}:{$error['line']})"
+        : 'Something went wrong on the server. Details are in the server error log.'], JSON_UNESCAPED_SLASHES);
+});
+
 try {
     // One address for search engines: www.example.com redirects to example.com (the PUBLIC_URL host)
     $canonicalHost = parse_url(public_url(), PHP_URL_HOST);
