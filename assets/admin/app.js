@@ -1103,7 +1103,36 @@ function loginView(status) {
         form,
       ];
     }
-    // Bot or channel not set up correctly; the message says what to fix in app/config.php
+    // Saved Messages login: scan with the Telegram app (Settings → Devices → Link Desktop Device)
+    case 'qr':
+      return [
+        el('h2', { textContent: 'Connect your Telegram' }),
+        el('p', { class: 'lead', textContent: 'Files are stored in your Saved Messages. Scan this code with the Telegram app on your phone.' }),
+        el('div', { class: 'qr-frame' }, el('img', { src: status.qr, alt: 'Telegram login QR code' })),
+        el('ol', { class: 'steps' },
+          el('li', {}, el('span', {}, 'Open ', el('strong', { textContent: 'Telegram' }), ' on your phone')),
+          el('li', {}, el('span', {}, 'Go to ', el('strong', { textContent: 'Settings → Devices → Link Desktop Device' }))),
+          el('li', {}, el('span', { textContent: 'Point your phone at this code. It refreshes by itself.' }))),
+      ];
+    case 'password': {
+      const input = el('input', { id: 'tg-password', class: 'input', type: 'password', placeholder: status.hint ? `Hint: ${status.hint}` : 'Your Telegram cloud password', required: true, autocomplete: 'off' });
+      const button = el('button', { class: 'btn primary btn-block', textContent: 'Continue' });
+      const form = el('form', {
+        onsubmit: (e) => {
+          e.preventDefault();
+          button.disabled = true;
+          button.textContent = 'Checking…';
+          authPost('api/auth/password', { password: input.value });
+        },
+      }, field('Password', input), button);
+      return [
+        el('h2', { textContent: 'Two-step verification' }),
+        el('p', { class: 'lead', textContent: 'Your Telegram account has an extra password. Enter it to finish connecting.' }),
+        errorBox(status),
+        form,
+      ];
+    }
+    // Storage not set up correctly; the message says what to fix in app/config.php
     case 'error':
       return [
         el('h2', { textContent: 'Telegram storage isn’t ready' }),

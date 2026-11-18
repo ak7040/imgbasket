@@ -849,6 +849,31 @@ dialog::backdrop { background: rgb(5 6 9 / .65); backdrop-filter: blur(4px); }
 .login-card form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
 .login-card a { color: var(--accent); font-weight: 550; }
 .login-foot { margin: 0; color: var(--faint); font-size: 13px; text-align: center; }
+.qr-frame {
+  width: 260px;
+  height: 260px;
+  margin: 4px auto 22px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+}
+.qr-frame img { width: 100%; height: 100%; display: block; }
+.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 10px; text-align: left; }
+.steps li { counter-increment: step; display: flex; gap: 12px; align-items: flex-start; color: var(--muted); }
+.steps li::before {
+  content: counter(step);
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.steps strong { color: var(--text); font-weight: 550; }
 .form-error {
   display: flex;
   align-items: flex-start;

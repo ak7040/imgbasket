@@ -14,6 +14,8 @@ function admin_route(string $method, string $path): never
     if ($path === '/api/admin/logout' && $method === 'POST') admin_logout();
     if ($path === '/api/auth/status') json_out(storage_status());
     if ($path === '/api/auth/retry' && $method === 'POST') json_out(storage_status(true));
+    // Two-step verification password during the Saved Messages (QR) login
+    if ($path === '/api/auth/password' && $method === 'POST') json_out(storage_submit_password((string) (json_body()['password'] ?? '')));
 
     // Everything else needs working Telegram storage; 401 sends the page back to the status screen
     $status = storage_status();

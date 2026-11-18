@@ -32,13 +32,23 @@ return [
         'pass' => '',
     ],
 
+    // Where files are stored:
+    //   'saved_messages'  your Telegram account's Saved Messages (log in from the admin with a QR code)
+    //   'bot'             a private channel, through a bot
+    'storage' => 'saved_messages',
+
     'telegram' => [
-        // From @BotFather (/newbot)
+        // Saved Messages: from https://my.telegram.org/apps (log in, "API development tools",
+        // create an app with any name)
+        'api_id' => '',
+        'api_hash' => '',
+
+        // Bot storage only: from @BotFather (/newbot)
         'bot_token' => '',
-        // Your private channel's ID, usually starting with -100. Leave empty at first: the admin
-        // page then lists the chats your bot can see.
+        // Bot storage only: your private channel's ID, usually starting with -100. Leave empty at
+        // first: the admin page then lists the chats your bot can see.
         'channel_id' => '',
-        // Only change this if you run your own Bot API server
+        // Bot storage only: change this only if you run your own Bot API server
         'api_base' => 'https://api.telegram.org',
     ],
 

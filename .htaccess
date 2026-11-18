@@ -9,6 +9,13 @@ DirectoryIndex index.php
 RewriteEngine On
 # App code, config and stored files are never served directly
 RewriteRule ^app(/|$) - [F,L]
+RewriteRule ^composer\.(json|lock)$ - [F,L]
+# Libraries are never served either, except MadelineProto's worker entry point: on hosts without
+# proc_open, MadelineProto starts its Telegram worker by requesting this file from the site itself
+# (always with MadelineSelfRestart=1 in the query; anything else is refused)
+RewriteCond %{QUERY_STRING} (^|&)MadelineSelfRestart=1(&|$)
+RewriteRule ^vendor/danog/madelineproto/src/Ipc/Runner/entry\.php$ - [L]
+RewriteRule ^vendor(/|$) - [F,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [L,QSA]
 

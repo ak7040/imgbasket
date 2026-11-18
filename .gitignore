@@ -3,3 +3,5 @@ app/storage/
 imgbasket.zip
 .DS_Store
 admin-subdomain.zip
+MadelineProto.log
+*.madeline

@@ -1,0 +1,17 @@
+{
+    "name": "imgbasket/imgbasket",
+    "description": "ImgBasket: free image hosting with Telegram storage",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "danog/madelineproto": "^8.21"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

@@ -2,8 +2,8 @@
 
 The code behind [imgbasket.com](https://imgbasket.com).
 
-Free image hosting with a private drive, built in PHP + MySQL. Files are stored in a private
-Telegram channel through a Telegram bot.
+Free image hosting with a private drive, built in PHP + MySQL. Files are stored on Telegram: in your
+own account's **Saved Messages** (default), or in a private channel through a bot.
 
 - **Public site** (`/`): anyone can upload images, browse the gallery of recent uploads, and get
   share links (page link, direct link, Markdown, HTML, BBCode). No account needed. Uploads can be
@@ -13,8 +13,11 @@ Telegram channel through a Telegram bot.
 
 ## How it works
 
-- Each file is sent to your private channel as a document. Files over 19 MB are split into
-  pieces automatically, because bots can only download 20 MB at a time.
+- **Saved Messages (default):** the site logs in as your Telegram account with
+  [MadelineProto](https://docs.madelineproto.xyz) and sends each file to your Saved Messages as one
+  document, up to 2 GB (4 GB with Premium). You log in once from the admin by scanning a QR code.
+- **Bot (alternative):** each file goes to a private channel through a bot. Files over 19 MB are split
+  into pieces, because bots can only download 20 MB at a time.
 - MySQL stores the folder tree and which messages make up each file.
 - Files up to 25 MB are also cached in `app/storage/`, so they load fast. Larger files are streamed
   from Telegram.
@@ -23,33 +26,54 @@ Telegram channel through a Telegram bot.
 
 ## Requirements
 
-- PHP 8.1+ with `curl`, `gd`, `pdo_mysql` and `exif`. These are standard on Hostinger.
+- PHP 8.2+ (64-bit) with `curl`, `gd`, `pdo_mysql`, `exif`, `mbstring`, `xml`, `dom`, `openssl`,
+  `zlib` and `fileinfo`. All are standard on Hostinger. `gmp` makes Telegram logins faster.
+- For Saved Messages: outgoing connections to Telegram on port 443 and `memory_limit` of 256 MB or
+  more. `extras/tg-check.php` checks this on a server; delete it afterwards.
 - MySQL or MariaDB.
 - Apache or LiteSpeed with `.htaccess` support (Hostinger), or PHP's built-in server for local use.
 
 ## Install on Hostinger
 
-1. **Bot:** in Telegram, message [@BotFather](https://t.me/BotFather), send `/newbot`, and copy the token.
-2. **Channel:** create a **private** channel. Add your bot as an **admin** with permission to
-   post and delete messages.
-3. **Database:** hPanel → Databases → create a MySQL database and user. Note the name, user and
+1. **Telegram API keys** (for Saved Messages): log in at <https://my.telegram.org/apps> with your phone
+   number, open **API development tools**, create an app with any name, and copy the **api_id** and
+   **api_hash**.
+2. **Database:** hPanel → Databases → create a MySQL database and user. Note the name, user and
    password. Hostinger adds a prefix like `u123456789_`.
-4. **Package:** on your computer, run `scripts/package.sh`. It creates `imgbasket.zip`.
-5. **Files:** hPanel → File Manager → `public_html`. Delete the placeholder files, upload
-   `imgbasket.zip`, and extract it there.
-6. **Config:** in `public_html/app/`, copy `config.sample.php` to `config.php`. Fill in
-   `admin_password`, `contact_email`, `db` and `telegram.bot_token`. Leave `channel_id` empty for now.
-7. **SSL:** turn it on in hPanel, so the admin password travels over HTTPS.
-8. **Force HTTPS:** hPanel → Security → SSL → turn on **Force HTTPS**, so search engines only see
-   `https://imgbasket.com`.
-9. Open `https://imgbasket.com/admin` and sign in. Post any message in your channel and press
-   **Try again**: the page shows the channel's ID (it starts with `-100`). Put it in `channel_id`
-   and press **Try again**.
+3. **Files:** deploy the repository with hPanel → **Git**, or run `scripts/package.sh` and extract
+   `imgbasket.zip` into `public_html`. `vendor/` (MadelineProto) is part of the repository and the zip,
+   so nothing needs installing on the server.
+4. **Config:** in `public_html/app/`, copy `config.sample.php` to `config.php`. Fill in
+   `admin_password`, `contact_email`, `db`, `telegram.api_id` and `telegram.api_hash`.
+5. **SSL:** install SSL in hPanel and turn on **Force HTTPS** (Security → SSL).
+6. **Connect Telegram:** open the admin and sign in. A QR code appears. On your phone, open Telegram →
+   Settings → Devices → **Link Desktop Device** and scan it. If your account has two-step
+   verification, enter that password. The admin then opens, and uploads work.
 
-The database tables are created automatically on first use.
+The database tables are created automatically on first use. The Telegram login is kept in
+`app/storage/telegram/`. To disconnect, end the "ImgBasket server" session in Telegram → Settings →
+Devices, and delete that folder.
 
-**Updating:** run `scripts/package.sh`, then upload and extract the zip over the old files.
-`app/config.php` and `app/storage/` are never in the zip, so they're kept.
+**Using a bot instead:** set `'storage' => 'bot'`, create a bot with [@BotFather](https://t.me/BotFather)
+(`/newbot`), add it as an admin of a private channel with permission to post and delete messages, and
+put the token in `telegram.bot_token`. The admin then shows the channel ID to put in `channel_id`.
+Files stored one way keep working after switching to the other.
+
+**Updating:** pull with hPanel → Git, or upload and extract a new `imgbasket.zip`.
+`app/config.php` and `app/storage/` are never in the repository or the zip, so they're kept.
+
+### How Saved Messages works on shared hosting
+
+MadelineProto keeps one background worker connected to Telegram. On hosts that disable `proc_open`
+(Hostinger does), it starts that worker by requesting
+`vendor/danog/madelineproto/src/Ipc/Runner/entry.php` from the site itself. `.htaccess` lets only that
+file through, and only for those startup requests (`MadelineSelfRestart=1`); everything else in
+`vendor/` is blocked. If the host stops the worker, it's started again on the next upload or download,
+which takes a few seconds. Errors go to `app/storage/telegram/MadelineProto.log`.
+
+**Your account and visitors' uploads:** everything visitors upload is stored in your Telegram account.
+If someone uploads illegal content, Telegram may restrict or ban that account. Consider a separate
+Telegram account just for ImgBasket, and check **Public uploads** in the admin regularly.
 
 ## Admin on a subdomain (recommended)
 
@@ -88,7 +112,9 @@ scripts/dev.sh                            # http://127.0.0.1:8080
 | `admin_password` | Password for the admin |
 | `admin_host` | Admin subdomain, e.g. `admin.imgbasket.com`. Empty keeps the admin at `/admin`. |
 | `db` | MySQL host, name, user, password |
-| `telegram.bot_token` / `telegram.channel_id` | Your bot and private channel |
+| `storage` | `saved_messages` (default) or `bot` |
+| `telegram.api_id` / `telegram.api_hash` | From my.telegram.org, for Saved Messages |
+| `telegram.bot_token` / `telegram.channel_id` | Your bot and private channel, for bot storage |
 | `public_max_upload` | Max size of visitors' uploads in bytes. `0` means only PHP's limit applies. |
 | `public_uploads_per_hour` | Uploads per IP address per hour (default 30) |
 | `cache_max_file` | Files up to this size are cached on disk (default 25 MB) |
@@ -157,5 +183,7 @@ og-image.png         Share image for the home page
 assets/admin/        Admin page script and styles
 extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
 app/                 PHP code, config, page templates (views/), and storage/ (not web-accessible)
+  telegram.php       Storage switch; storage_saved.php (Saved Messages), storage_bot.php (bot)
+vendor/              MadelineProto and its libraries (composer.json); blocked from the web
 scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php
 ```

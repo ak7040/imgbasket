@@ -57,19 +57,21 @@ function is_image(array $file): bool
 function store_file(string $tmpPath, array $fields): array
 {
     $size = filesize($tmpPath);
-    $total = max(1, (int) ceil($size / CHUNK_SIZE));
+    $partSize = tg_part_size();
+    $total = max(1, (int) ceil($size / $partSize));
     $sent = [];
     try {
         for ($i = 0; $i < $total; $i++) {
-            $offset = $i * CHUNK_SIZE;
+            $offset = $i * $partSize;
+            $length = (int) min($partSize, $size - $offset);
             $partName = $total === 1 ? $fields['name'] : sprintf('%s.part%03d', $fields['name'], $i + 1);
             $caption = $total === 1 ? $fields['name'] : sprintf('%s [%d/%d]', $fields['name'], $i + 1, $total);
-            $part = tg_send_part($tmpPath, $offset, (int) min(CHUNK_SIZE, $size - $offset), $partName, $caption);
-            $sent[] = $part + ['size' => (int) min(CHUNK_SIZE, $size - $offset)];
+            $part = tg_send_part($tmpPath, $offset, $length, $partName, $caption, (string) $fields['mime']);
+            $sent[] = $part + ['size' => $length];
         }
     } catch (Throwable $e) {
-        // Don't leave orphaned pieces in the channel
-        foreach ($sent as $part) tg_delete_message($part['message_id']);
+        // Don't leave orphaned pieces in Telegram
+        foreach ($sent as $part) tg_delete_chunk(['tg_file_id' => $part['file_id'], 'tg_message_id' => $part['message_id']]);
         throw $e;
     }
 
@@ -93,7 +95,7 @@ function store_file(string $tmpPath, array $fields): array
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
-        foreach ($sent as $part) tg_delete_message($part['message_id']);
+        foreach ($sent as $part) tg_delete_chunk(['tg_file_id' => $part['file_id'], 'tg_message_id' => $part['message_id']]);
         throw $e;
     }
 
@@ -105,22 +107,29 @@ function store_file(string $tmpPath, array $fields): array
 
 function delete_file(array $file): void
 {
-    $chunks = q_all('SELECT tg_message_id FROM chunks WHERE file_id = ?', [$file['id']]);
+    $chunks = file_chunks($file);
     q_exec('DELETE FROM files WHERE id = ?', [$file['id']]);
-    foreach ($chunks as $c) tg_delete_message((int) $c['tg_message_id']);
+    foreach ($chunks as $chunk) tg_delete_chunk($chunk);
     uncache($file['id']);
 }
 
 // Writes the whole file to $path (used for thumbnails of files that aren't cached)
 function download_to(array $file, string $path): void
 {
-    $out = fopen($path, 'wb');
+    tg_download_file($file, $path);
+}
+
+// Downloads a small file from Telegram into the cache; returns its cached path
+function fill_cache(array $file): ?string
+{
+    $tmp = cache_path($file) . '.' . bin2hex(random_bytes(6)) . '.tmp';
     try {
-        foreach (q_all('SELECT tg_file_id FROM chunks WHERE file_id = ? ORDER BY idx', [$file['id']]) as $c) {
-            tg_download($c['tg_file_id'], fn(string $data) => fwrite($out, $data));
-        }
+        tg_download_file($file, $tmp);
+        if (filesize($tmp) !== (int) $file['size']) return null;
+        rename($tmp, cache_path($file));
+        return cache_path($file);
     } finally {
-        fclose($out);
+        if (is_file($tmp)) @unlink($tmp);
     }
 }
 
@@ -129,84 +138,71 @@ function end_output_buffers(): void
     while (ob_get_level() > 0) ob_end_clean();
 }
 
-// Sends a file to the browser: from the cache when possible (with range support, so videos can
-// be seeked), otherwise streamed piece by piece from Telegram
+// Sends a file to the browser. Files up to cache_max_file are served from the local cache (filled
+// from Telegram on first view), with range support so videos can be seeked; bigger ones stream
+// straight from Telegram.
 function send_file(array $file, bool $inline, string $cacheControl): never
 {
     @set_time_limit(0);
     end_output_buffers();
 
-    $name = $file['name'];
-    $fallback = preg_replace('/[^\x20-\x7e]|["\\\\]/', '_', $name);
-    header('Content-Type: ' . ($file['mime'] ?: 'application/octet-stream'));
-    header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fallback\"; filename*=UTF-8''" . rawurlencode($name));
-    // Uploaded HTML/SVG must not run scripts on this site
-    header('Content-Security-Policy: sandbox');
-    header('X-Content-Type-Options: nosniff');
-    header("Cache-Control: $cacheControl");
-
     $size = (int) $file['size'];
-    $cached = cached_path($file);
-    if ($cached) {
-        header('Accept-Ranges: bytes');
-        $start = 0;
-        $end = $size - 1;
-        if (preg_match('/^bytes=(\d*)-(\d*)$/', (string) ($_SERVER['HTTP_RANGE'] ?? ''), $m) && ($m[1] !== '' || $m[2] !== '')) {
-            if ($m[1] === '') {
-                $start = max(0, $size - (int) $m[2]);
-            } else {
-                $start = (int) $m[1];
-                if ($m[2] !== '') $end = min($end, (int) $m[2]);
-            }
-            if ($start > $end || $start >= $size) {
-                http_response_code(416);
-                header("Content-Range: bytes */$size");
-                exit;
-            }
-            http_response_code(206);
-            header("Content-Range: bytes $start-$end/$size");
+    $headers = function () use ($file, $inline, $cacheControl): void {
+        $name = $file['name'];
+        $fallback = preg_replace('/[^\x20-\x7e]|["\\\\]/', '_', $name);
+        header('Content-Type: ' . ($file['mime'] ?: 'application/octet-stream'));
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fallback\"; filename*=UTF-8''" . rawurlencode($name));
+        // Uploaded HTML/SVG must not run scripts on this site
+        header('Content-Security-Policy: sandbox');
+        header('X-Content-Type-Options: nosniff');
+        header("Cache-Control: $cacheControl");
+    };
+
+    $cached = cached_path($file) ?? ($size <= cache_max_file() ? fill_cache($file) : null);
+    if (!$cached) {
+        if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {
+            $headers();
+            header("Content-Length: $size");
+            exit;
         }
-        header('Content-Length: ' . ($end - $start + 1));
-        if ($_SERVER['REQUEST_METHOD'] === 'HEAD') exit;
-        $fh = fopen($cached, 'rb');
-        fseek($fh, $start);
-        $left = $end - $start + 1;
-        while ($left > 0 && !feof($fh) && !connection_aborted()) {
-            $buf = fread($fh, (int) min(1 << 16, $left));
-            echo $buf;
-            $left -= strlen($buf);
-            flush();
-        }
-        fclose($fh);
-        exit;
+        tg_stream_file($file, function () use ($headers, $size): void {
+            $headers();
+            header("Content-Length: $size");
+            header('Accept-Ranges: none');
+        });
     }
 
-    header("Content-Length: $size");
-    header('Accept-Ranges: none');
+    $headers();
+    header('Accept-Ranges: bytes');
+    $start = 0;
+    $end = $size - 1;
+    if (preg_match('/^bytes=(\d*)-(\d*)$/', (string) ($_SERVER['HTTP_RANGE'] ?? ''), $m) && ($m[1] !== '' || $m[2] !== '')) {
+        if ($m[1] === '') {
+            $start = max(0, $size - (int) $m[2]);
+        } else {
+            $start = (int) $m[1];
+            if ($m[2] !== '') $end = min($end, (int) $m[2]);
+        }
+        if ($start > $end || $start >= $size) {
+            http_response_code(416);
+            header("Content-Range: bytes */$size");
+            exit;
+        }
+        http_response_code(206);
+        header("Content-Range: bytes $start-$end/$size");
+    }
+    header('Content-Length: ' . ($end - $start + 1));
     if ($_SERVER['REQUEST_METHOD'] === 'HEAD') exit;
-
-    // Keep a copy of small files while they stream, so the next view comes from disk
-    $tmp = $size <= cache_max_file() ? cache_path($file) . '.' . bin2hex(random_bytes(6)) . '.tmp' : null;
-    $copy = $tmp ? fopen($tmp, 'wb') : null;
-    try {
-        foreach (q_all('SELECT tg_file_id FROM chunks WHERE file_id = ? ORDER BY idx', [$file['id']]) as $c) {
-            tg_download($c['tg_file_id'], function (string $data) use ($copy) {
-                if ($copy) fwrite($copy, $data);
-                echo $data;
-                flush();
-            });
-        }
-        if ($copy) {
-            fclose($copy);
-            $copy = null;
-            if (filesize($tmp) === $size) rename($tmp, cache_path($file));
-        }
-    } catch (Throwable $e) {
-        error_log("Download of file {$file['id']} failed: " . $e->getMessage());
-    } finally {
-        if ($copy) fclose($copy);
-        if ($tmp && is_file($tmp)) @unlink($tmp);
+    $fh = fopen($cached, 'rb');
+    fseek($fh, $start);
+    $left = $end - $start + 1;
+    while ($left > 0 && !feof($fh) && !connection_aborted()) {
+        $buf = fread($fh, (int) min(1 << 16, $left));
+        echo $buf;
+        $left -= strlen($buf);
+        flush();
     }
+    fclose($fh);
     exit;
 }
 
