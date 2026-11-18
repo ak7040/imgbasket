@@ -1,0 +1,73 @@
+<main class="content-page">
+  <h1>Imgur alternative: free image hosting with {{MAX_UPLOAD}} uploads</h1>
+  <p class="lede">Imgur is where a lot of people learned to share images, but its free plan is built for
+    small pictures and a social feed. {{SITE_NAME}} does one job instead: it hosts your image, gives you a
+    link, and gets out of the way. No account, no ads, and up to {{MAX_UPLOAD}} per image.</p>
+
+  <h2>What you get instead of Imgur</h2>
+  <ul class="checks">
+    <li><strong>Much larger uploads.</strong> {{MAX_UPLOAD}} per image versus 50&nbsp;MB for a still image
+      on Imgur's free plan.</li>
+    <li><strong>The original file.</strong> Anonymous Imgur uploads over 1&nbsp;MB are recompressed, and
+      large PNGs are converted to JPEG. {{SITE_NAME}} serves the file you uploaded.</li>
+    <li><strong>No account, ever.</strong> There is no sign-up wall, no email and no profile to manage.</li>
+    <li><strong>No ads and no tracking cookies.</strong> The page you share shows the image and its links.</li>
+    <li><strong>Embeds that work.</strong> Copy BBCode for forums, Markdown for Reddit and Discord, HTML
+      for a blog, or the direct link for anywhere else.</li>
+    <li><strong>Public or unlisted.</strong> Publish to the gallery, or keep the image link-only and out of
+      search engines.</li>
+  </ul>
+
+  <h2>{{SITE_NAME}} vs Imgur (free plan)</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col">Feature</th><th scope="col" class="own">{{SITE_NAME}}</th><th scope="col">Imgur free</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Account needed</th><td class="own">No</td><td>No to upload</td></tr>
+        <tr><th scope="row">Maximum still image</th><td class="own">{{MAX_UPLOAD}}</td><td>50 MB</td></tr>
+        <tr><th scope="row">Recompressed on upload</th><td class="own">No</td><td>Yes, over 1 MB anonymously</td></tr>
+        <tr><th scope="row">Direct image link</th><td class="own">Yes</td><td>Yes</td></tr>
+        <tr><th scope="row">BBCode and HTML</th><td class="own">Yes</td><td>Direct link</td></tr>
+        <tr><th scope="row">Ads</th><td class="own">None</td><td>Yes</td></tr>
+        <tr><th scope="row">Public community feed</th><td class="own">No</td><td>Yes</td></tr>
+        <tr><th scope="row">Public API</th><td class="own">No</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">Imgur details come from its public help pages and were checked in November 2026.
+    Imgur's plans and limits can change.</p>
+
+  <h2>How to move an image from Imgur</h2>
+  <ol>
+    <li>Open the image on Imgur and download the original file — not the page, and not the compressed
+      version, if you still have the source.</li>
+    <li>Drop it on the <a href="/">{{SITE_NAME}} home page</a>, or paste it with Ctrl&nbsp;+&nbsp;V. It
+      uploads straight from your browser.</li>
+    <li>Copy the link you need from the result: page link, direct link, Markdown, HTML or BBCode.</li>
+    <li>Replace the old Imgur link wherever you posted it. Old links keep working until you change them;
+      there is no automatic redirect between the two sites.</li>
+  </ol>
+
+  <h2>Where Imgur is still the better choice</h2>
+  <p>Being honest: Imgur is a community as well as a host. It has public galleries, comments, voting and a
+    developer API, and it is the right tool if you want your image to be discovered by other people.
+    {{SITE_NAME}} has none of that. It is a plain host for images you are going to link to yourself —
+    forums, chat, a blog, a support ticket or documentation. If you need albums, accounts or an API, this
+    is not a drop-in replacement for those features yet.</p>
+
+  <h2>Common questions</h2>
+  <h3>Is {{SITE_NAME}} really free?</h3>
+  <p>Yes. Uploading, hosting and sharing cost nothing. There is no storage quota and no paid tier to
+    upgrade to.</p>
+  <h3>Do my images expire?</h3>
+  <p>We don't put an expiry date on uploads. That said, this is a free service run by a small team, so
+    keep your own copy of anything important. The <a href="/terms">Terms of Use</a> explain the limits.</p>
+  <h3>Can I use the direct link on a website?</h3>
+  <p>Yes. The direct link points at the image file, so it works in an <code>&lt;img&gt;</code> tag, a CSS
+    background, a Markdown post or a forum's BBCode field. See
+    <a href="/image-hosting-for-forums">image hosting for forums</a> for the exact formats.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload an image</a></p>
+</main>

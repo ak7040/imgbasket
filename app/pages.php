@@ -58,16 +58,95 @@ function site_footer(): string
 <footer class="site-footer">
     <div class="footer-inner">
       <a class="brand" href="/"><span class="mark" data-icon="logo"></span>$site</a>
-      <nav class="footer-links">
+      <nav class="footer-links" aria-label="Footer">
         <a href="/">Upload</a>
+        <a href="/imgur-alternative">Imgur alternative</a>
+        <a href="/imgbb-alternative">ImgBB alternative</a>
+        <a href="/anonymous-image-hosting">Anonymous hosting</a>
+        <a href="/image-hosting-for-forums">For forums</a>
+        <a href="/about">About</a>
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
         $contact
       </nav>
-      <p class="footer-note">© $year $site · Free image hosting</p>
+      <p class="footer-note">© $year $site · Free image hosting, unlimited uploads</p>
     </div>
   </footer>
 HTML;
+}
+
+// Search-facing pages built from app/views/pages/<slug>.html
+function content_meta(): array
+{
+    $size = format_size(public_max_upload());
+    return [
+        'imgur-alternative' => [
+            'title' => 'Imgur Alternative — ' . $size . ' Free Image Hosting · ' . site_name(),
+            'description' => 'Looking for an Imgur alternative? ' . site_name() . ' hosts images free, without an account, up to ' . $size . ' each, with direct links, Markdown and BBCode.',
+            'crumb' => 'Imgur alternative',
+        ],
+        'imgbb-alternative' => [
+            'title' => 'ImgBB Alternative — ' . $size . ' Free Image Hosting · ' . site_name(),
+            'description' => 'Swap ImgBB for ' . site_name() . ': no account, no ads, up to ' . $size . ' per image, direct links and BBCode. A free ImgBB alternative for forums and sharing.',
+            'crumb' => 'ImgBB alternative',
+        ],
+        'anonymous-image-hosting' => [
+            'title' => 'Anonymous Image Hosting — Upload Without an Account · ' . site_name(),
+            'description' => 'Upload images anonymously. No sign-up, no email, no ad trackers. Public or unlisted links, up to ' . $size . ' per image, free.',
+            'crumb' => 'Anonymous image hosting',
+        ],
+        'image-hosting-for-forums' => [
+            'title' => 'Free Image Hosting for Forums — BBCode, HTML & Direct Links · ' . site_name(),
+            'description' => 'Host images for forums, Reddit and blogs. Copy BBCode, Markdown, HTML or a direct link in one click. Free, no account, up to ' . $size . ' per image.',
+            'crumb' => 'Image hosting for forums',
+        ],
+        'about' => [
+            'title' => 'About ' . site_name() . ' — How Our Free Image Hosting Works',
+            'description' => 'How ' . site_name() . ' works: free image hosting on Telegram-backed storage, no account, up to ' . $size . ' per image, and how we handle abuse and privacy.',
+            'crumb' => 'About',
+        ],
+    ];
+}
+
+function content_slugs(): array
+{
+    return array_keys(content_meta());
+}
+
+// BreadcrumbList JSON-LD. Pass [name, path] pairs; a null path omits the URL for the last item.
+function breadcrumb_ld(array $items): string
+{
+    $list = [];
+    foreach ($items as $i => [$name, $path]) {
+        $item = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $name];
+        if ($path !== null) $item['item'] = public_url() . $path;
+        $list[] = $item;
+    }
+    return json_ld([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $list,
+    ]);
+}
+
+function content_page(string $slug): string
+{
+    $meta = content_meta()[$slug];
+    $body = render_view("pages/$slug.html", [
+        'MAX_UPLOAD' => esc(format_size(public_max_upload())),
+    ]);
+    $crumbs = '<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a>'
+        . '<span aria-hidden="true">/</span><span>' . esc($meta['crumb']) . '</span></nav>';
+    // Keep the breadcrumbs inside the article column, not loose on the page
+    $body = str_replace('<main class="content-page">', '<main class="content-page">' . $crumbs, $body, $count);
+    if ($count === 0) $body = $crumbs . $body;
+    return layout([
+        'title' => $meta['title'],
+        'description' => $meta['description'],
+        'canonical' => public_url() . "/$slug",
+        'head' => breadcrumb_ld([['Home', '/'], [$meta['crumb'], null]]),
+        'body' => $body,
+    ]);
 }
 
 // Templates in app/views use {{SITE_NAME}}, {{SITE_URL}}, {{DESCRIPTION}}, {{HEAD}}, {{FOOTER}}, …
@@ -86,6 +165,40 @@ function render_view(string $name, array $vars = []): string
     return strtr((string) file_get_contents(APP_DIR . "/views/$name"), $replace);
 }
 
+// The first page of the public gallery, rendered into the HTML so crawlers get real links to image
+// pages even before the gallery script runs. The script replaces it with its own masonry layout.
+function recent_gallery_html(int $limit = 12): string
+{
+    try {
+        $rows = q_all(
+            'SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND mime LIKE \'image/%\''
+            . ' ORDER BY id DESC LIMIT ' . $limit
+        );
+    } catch (Throwable $e) {
+        return '';
+    }
+    if (!$rows) return '';
+
+    $cols = [[], [], []];
+    $i = 0;
+    foreach ($rows as $row) {
+        $f = file_row($row);
+        $ratio = $f['width'] && $f['height'] ? 'aspect-ratio:' . $f['width'] . ' / ' . $f['height'] . ';' : '';
+        $thumb = $f['mime'] === 'image/gif' ? raw_path($f) : '/t/' . $f['share_token'] . '.webp';
+        $dims = $f['width'] ? ' width="' . (int) $f['width'] . '" height="' . (int) $f['height'] . '"' : '';
+        $cols[$i++ % 3][] = '<a class="card" href="' . esc(public_url() . '/s/' . $f['share_token']) . '" style="' . $ratio . '">'
+            . '<img class="loaded" src="' . esc($thumb) . '" alt="' . esc($f['name']) . '"' . $dims . ' loading="lazy" decoding="async">'
+            . '<div class="shade"><div class="name">' . esc($f['name']) . '</div>'
+            . '<div class="meta">' . esc(format_size($f['size'])) . ' · '
+            . esc(gmdate('M j, Y', strtotime($f['created_at'] . ' UTC'))) . '</div></div></a>';
+    }
+    $html = '';
+    foreach ($cols as $col) {
+        if ($col) $html .= '<div class="col">' . implode('', $col) . '</div>';
+    }
+    return $html;
+}
+
 function home_page(): string
 {
     $url = public_url();
@@ -98,6 +211,7 @@ function home_page(): string
                 'url' => "$url/",
                 'name' => site_name(),
                 'description' => site_description(),
+                'inLanguage' => 'en',
             ],
             [
                 '@type' => 'Organization',
@@ -105,6 +219,7 @@ function home_page(): string
                 'name' => site_name(),
                 'url' => "$url/",
                 'logo' => "$url/icon-512.png",
+                'description' => 'Free image hosting with unlimited uploads and no account required.',
             ] + (contact_email() !== '' ? ['email' => contact_email()] : []),
             [
                 '@type' => 'WebApplication',
@@ -112,11 +227,23 @@ function home_page(): string
                 'url' => "$url/",
                 'applicationCategory' => 'MultimediaApplication',
                 'operatingSystem' => 'Any',
+                'browserRequirements' => 'Requires a modern browser with JavaScript enabled.',
+                'isAccessibleForFree' => true,
+                'featureList' => [
+                    'Image upload without an account',
+                    'Direct image links, Markdown, HTML and BBCode',
+                    'Public gallery or unlisted images',
+                    'Uploads up to ' . format_size(public_max_upload()) . ' per image',
+                ],
                 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
             ],
         ],
     ]);
-    return render_view('home.html', ['JSONLD' => $ld, 'MAX_UPLOAD' => esc(format_size(public_max_upload()))]);
+    return render_view('home.html', [
+        'JSONLD' => $ld,
+        'MAX_UPLOAD' => esc(format_size(public_max_upload())),
+        'RECENT' => recent_gallery_html(),
+    ]);
 }
 
 // $o: title, description, canonical, robots, head, body, script, og_image
@@ -259,6 +386,8 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
         ], fn($v) => $v !== null)) : null,
     ]);
 
+    $head[] = breadcrumb_ld([['Home', '/'], [$file['name'], null]]);
+
     $tabs = '';
     foreach ($formats as $i => [$tabLabel, $value]) {
         $tabs .= '<button class="' . ($i ? '' : 'active') . '" data-value="' . esc($value) . '">' . $tabLabel . '</button>';
@@ -303,11 +432,14 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
       <a class="btn" href="/"><span data-icon="upload"></span>Upload your own image</a>
       $report
     </div>
+    <p class="page-note">This image is hosted free on $site. <a href="/">Upload your own image</a> to get a
+      direct link in seconds, or read the guide to
+      <a href="/image-hosting-for-forums">image hosting for forums</a>.</p>
   </main>
 HTML;
 
     return layout([
-        'title' => "{$file['name']} · $site",
+        'title' => "{$file['name']} — Free Image Hosting · $site",
         'description' => $description,
         'canonical' => $pageUrl,
         // Only gallery images may appear in search results; unlisted links stay private
@@ -396,6 +528,7 @@ HTML;
         'title' => "$title · " . site_name(),
         'description' => $description,
         'canonical' => public_url() . "/$which",
+        'head' => breadcrumb_ld([['Home', '/'], [$title, null]]),
         'body' => $body,
     ]);
 }

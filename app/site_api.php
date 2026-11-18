@@ -8,6 +8,15 @@ function site_route(string $method, string $path): never
     if ($get && $path === '/robots.txt') site_robots();
     if ($get && $path === '/sitemap.xml') site_sitemap();
     if ($get && ($path === '/terms' || $path === '/privacy')) html_out(legal_page(substr($path, 1)));
+    if ($get && $path === '/llms.txt') site_llms();
+    // Content pages: /imgur-alternative, /imgbb-alternative, /anonymous-image-hosting, /about, …
+    if (preg_match('#^/([a-z0-9-]+)/$#', $path, $m) && in_array($m[1], content_slugs(), true)) {
+        header('Location: /' . $m[1], true, 301); // one canonical address, no trailing slash
+        exit;
+    }
+    if ($get && preg_match('#^/([a-z0-9-]+)$#', $path, $m) && in_array($m[1], content_slugs(), true)) {
+        html_out(content_page($m[1]));
+    }
     if ($get && $path === '/api/config') json_out(['maxUpload' => public_max_upload()]);
     if ($get && $path === '/api/gallery') site_gallery();
     if ($method === 'POST' && $path === '/api/upload') site_upload();
@@ -150,25 +159,77 @@ function site_robots(): never
     exit;
 }
 
-// Home, legal pages, and every image in the public gallery (never unlisted ones), with image tags
+// A short, plain-text map for AI assistants and other agents that look for one. Google ignores it.
+function site_llms(): never
+{
+    $url = public_url();
+    $site = site_name();
+    $lines = [
+        "# $site",
+        '',
+        "> Free image hosting with unlimited uploads, no account required. Upload an image and get a",
+        '> page link and a direct image link, plus Markdown, HTML and BBCode. Files up to '
+            . format_size(public_max_upload()) . ' each.',
+        '',
+        '## Pages',
+        "- [Upload an image]($url/): home page and uploader",
+    ];
+    foreach (content_meta() as $slug => $meta) {
+        $lines[] = "- [{$meta['crumb']}]($url/$slug)";
+    }
+    $lines[] = "- [Terms of Use]($url/terms)";
+    $lines[] = "- [Privacy Policy]($url/privacy)";
+    $lines[] = '';
+    $lines[] = '## Notes';
+    $lines[] = '- Public gallery images have indexable pages at /s/<token>. Unlisted images are link-only and noindex.';
+    $lines[] = '- Images are served from /i/<token>; previews from /t/<token>.jpg and /t/<token>.webp.';
+    $lines[] = '- There is no public upload API. Uploads are rate-limited to '
+        . (int) config('public_uploads_per_hour', 30) . ' per IP per hour.';
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: public, max-age=3600');
+    echo implode("\n", $lines) . "\n";
+    exit;
+}
+
+// Home, content pages, legal pages, and every image in the public gallery (never unlisted ones), with image tags
 function site_sitemap(): never
 {
     $url = public_url();
     $x = fn(string $s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
-    $latest = q_one('SELECT MAX(created_at) AS t FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL')['t'] ?? null;
+    // If the database is briefly unavailable the static pages should still be listable
+    try {
+        $latest = q_one('SELECT MAX(created_at) AS t FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL')['t'] ?? null;
+    } catch (Throwable $e) {
+        $latest = null;
+    }
 
     $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
         . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n"
         . '<url><loc>' . $x("$url/") . '</loc>' . ($latest ? '<lastmod>' . gmdate('Y-m-d', strtotime("$latest UTC")) . '</lastmod>' : '')
-        . '<changefreq>hourly</changefreq><priority>1.0</priority></url>' . "\n"
-        . '<url><loc>' . $x("$url/terms") . '</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n"
-        . '<url><loc>' . $x("$url/privacy") . '</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n";
+        . '<changefreq>hourly</changefreq><priority>1.0</priority></url>' . "\n";
+    // Search-facing content pages, dated by the file that holds their copy
+    foreach (content_meta() as $slug => $meta) {
+        $file = APP_DIR . "/views/pages/$slug.html";
+        $modified = is_file($file) ? gmdate('Y-m-d', filemtime($file)) : gmdate('Y-m-d');
+        $out .= '<url><loc>' . $x("$url/$slug") . '</loc><lastmod>' . $modified
+            . '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>' . "\n";
+    }
+    $legalDate = gmdate('Y-m-d', filemtime(APP_DIR . '/pages.php'));
+    $out .= '<url><loc>' . $x("$url/terms") . '</loc><lastmod>' . $legalDate
+        . '</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n"
+        . '<url><loc>' . $x("$url/privacy") . '</loc><lastmod>' . $legalDate
+        . '</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n";
     // A sitemap holds at most 50,000 URLs
-    $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND mime LIKE 'image/%' ORDER BY id DESC LIMIT 49000");
+    try {
+        $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND mime LIKE 'image/%' ORDER BY id DESC LIMIT 49000");
+    } catch (Throwable $e) {
+        $rows = [];
+    }
     foreach ($rows as $row) {
         $f = file_row($row);
         $out .= '<url><loc>' . $x("$url/s/{$f['share_token']}") . '</loc><lastmod>' . gmdate('Y-m-d', strtotime($f['created_at'] . ' UTC'))
-            . '</lastmod><image:image><image:loc>' . $x($url . raw_path($f)) . '</image:loc></image:image></url>' . "\n";
+            . '</lastmod><image:image><image:loc>' . $x($url . raw_path($f)) . '</image:loc>'
+            . '<image:title>' . $x($f['name']) . '</image:title></image:image></url>' . "\n";
     }
     $out .= '</urlset>' . "\n";
     header('Content-Type: application/xml; charset=utf-8');

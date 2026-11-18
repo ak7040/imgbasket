@@ -4,8 +4,9 @@ return [
     // Shown in the header, page titles and link previews
     'site_name' => 'ImgBasket',
 
-    // Used in search results and link previews of the home page
-    'site_description' => 'Free image hosting: upload images and get shareable links in seconds. Direct links, Markdown, HTML and BBCode for forums. No account needed.',
+    // Used in search results and link previews of the home page. Lead with the main keyword and the
+    // things that make the site different (no account, unlimited uploads, size limit).
+    'site_description' => 'Free image hosting with unlimited uploads and no account: upload an image up to 2 GB and get a direct link, HTML or BBCode in seconds.',
 
     // Shown on the Terms, Privacy and Report links, for takedown requests and questions
     'contact_email' => 'support@imgbasket.com',

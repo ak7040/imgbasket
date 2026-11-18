@@ -145,31 +145,57 @@ public site both show the current limit.
 ## SEO
 
 - **Home page:** keyword-focused title and description, canonical URL, Open Graph/Twitter tags with a
-  1200×630 share image (`og-image.png`), JSON-LD structured data (WebSite, Organization,
-  WebApplication), and crawlable content (features and FAQ).
+  1200×630 share image (`og-image.png`), JSON-LD structured data (WebSite, Organization, WebApplication),
+  and crawlable content: the unlimited-upload pitch, an ImgBasket vs Imgur vs ImgBB comparison table,
+  feature cards, guide links and an FAQ.
+- **Search-facing pages** (copy lives in `app/views/pages/`): `/imgur-alternative`,
+  `/imgbb-alternative`, `/anonymous-image-hosting`, `/image-hosting-for-forums` and `/about`. Each has
+  its own title, description, canonical URL, breadcrumbs and `BreadcrumbList` JSON-LD. These target
+  "imgur alternative", "imgbb alternative", "anonymous image hosting" and "image hosting for forums".
+  Edit the HTML files to change the copy; no PHP edits are needed.
 - **Image pages** (`/s/<token>`): a descriptive title and description built from the file name,
-  canonical URL, `ImageObject` structured data, image alt text, and a large image preview for search.
-- **`/sitemap.xml`:** the home page, legal pages and every **public gallery** image, with image tags.
-  `/robots.txt` points to it and keeps `/admin` and `/api/` out of search.
+  canonical URL, `ImageObject` and `BreadcrumbList` structured data, image alt text, a large image
+  preview for search, and internal links back to the uploader and the forum guide.
+- **`/sitemap.xml`:** the home page, the five content pages, legal pages and every **public gallery**
+  image, with image tags and titles. `/robots.txt` points to it and keeps `/admin` and `/api/` out of
+  search. It still returns the static pages if the database is briefly unavailable.
+- **Crawlable gallery:** the first 12 public images are rendered into the home page HTML as real links
+  (the gallery script then replaces the masonry), so image pages get internal links instead of being
+  reachable only through the sitemap.
 - **Unlisted images stay private:** their pages carry `noindex`, and their files and previews are
   sent with `X-Robots-Tag: noindex`. They never appear in the sitemap. The admin is `noindex` too.
-- **One address:** `www.imgbasket.com` redirects to `imgbasket.com` (the `public_url` host). Turn on
-  Force HTTPS in hPanel for the `https://` part.
-- **Speed:** compression and browser caching in `.htaccess`, lazy-loaded gallery thumbnails, and
-  width/height on images so the page doesn't jump while loading.
-- **Trust pages:** `/terms`, `/privacy`, and a **Report** link on every image page.
+- **One address:** `www.imgbasket.com` redirects to `imgbasket.com` (the `public_url` host), and a
+  trailing slash on a content page redirects to the canonical URL. Turn on Force HTTPS in hPanel for the
+  `https://` part.
+- **`/llms.txt`:** a short plain-text page map for AI assistants. Google ignores it; it costs nothing.
+- **IndexNow:** the `<32-hex>.txt` file in the repository root is the IndexNow key. Run
+  `scripts/indexnow.sh` after a deploy to submit every sitemap URL to Bing (and Copilot) without waiting
+  for a crawl. Pass URLs as arguments to submit only those.
+- **Speed:** compression and browser caching in `.htaccess`, lazy-loaded gallery thumbnails, width/height
+  on images so the page doesn't jump, and a small HTML payload (Lighthouse mobile: Performance 99,
+  SEO 100).
+- **Trust pages:** `/terms`, `/privacy`, `/about` and a **Report** link on every image page.
 
 **After going live:**
 
 1. Add the site in [Google Search Console](https://search.google.com/search-console). Use the
    "HTML tag" method: put the code in `google_site_verification`, then verify.
-2. Submit `https://imgbasket.com/sitemap.xml` under Sitemaps.
-3. Optionally do the same in [Bing Webmaster Tools](https://www.bing.com/webmasters), which can import
-   from Search Console.
-4. Test a shared link with the [Rich Results Test](https://search.google.com/test/rich-results) and a
+2. Submit `https://imgbasket.com/sitemap.xml` under Sitemaps. Request indexing for `/` and the five
+   content pages under URL Inspection.
+3. Do the same in [Bing Webmaster Tools](https://www.bing.com/webmasters) (it can import from Search
+   Console), then run `scripts/indexnow.sh`.
+4. Set `site_description` in the server's `app/config.php` to the value in `app/config.sample.php` — that
+   file is not in the repository, so this is a manual change. It is the home page meta description.
+5. Test a shared link with the [Rich Results Test](https://search.google.com/test/rich-results) and a
    social preview checker.
-5. Review `/terms` and `/privacy` (in `app/pages.php`) for your situation. They're general wording,
+6. Review `/terms` and `/privacy` (in `app/pages.php`) for your situation. They're general wording,
    not legal advice.
+
+**Ranking reality check:** these changes fix on-page targeting, internal linking and discovery. They do
+not create authority by themselves. A new domain needs links and time: get listed in image-hosting
+directories and "best free image host" roundups, answer real questions where a link is welcome, and seed
+the public gallery with images people actually search for. Without backlinks, expect new pages to sit on
+page 2–5 for competitive terms such as "free image hosting".
 
 ## Link previews
 
@@ -190,7 +216,8 @@ og-image.png         Share image for the home page
 assets/admin/        Admin page script and styles
 extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
 app/                 PHP code, config, page templates (views/), and storage/ (not web-accessible)
+  views/pages/       Copy for the SEO pages (/imgur-alternative, /about, …)
   telegram.php       Storage switch; storage_saved.php (Saved Messages), storage_bot.php (bot)
 vendor/              MadelineProto and its libraries (composer.json); blocked from the web
-scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php
+scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php, indexnow.sh
 ```

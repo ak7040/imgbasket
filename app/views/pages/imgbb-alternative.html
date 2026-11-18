@@ -1,0 +1,68 @@
+<main class="content-page">
+  <h1>ImgBB alternative: bigger uploads, no ads, no account</h1>
+  <p class="lede">ImgBB is a solid free image host, but the free plan caps each image at 32&nbsp;MB and shows
+    ads. If you regularly upload screenshots, photos or design exports, that ceiling gets in the way.
+    {{SITE_NAME}} accepts up to {{MAX_UPLOAD}} per image, keeps the original file, and asks for no account.</p>
+
+  <h2>What is different</h2>
+  <ul class="checks">
+    <li><strong>{{MAX_UPLOAD}} per image</strong> — far beyond ImgBB's 32&nbsp;MB free limit, with no Pro
+      plan needed.</li>
+    <li><strong>No ads and no tracking cookies</strong> on the pages you share.</li>
+    <li><strong>No account</strong> to upload, keep links, or manage images.</li>
+    <li><strong>Direct links, BBCode, Markdown and HTML</strong> generated for every upload.</li>
+    <li><strong>Public or unlisted</strong>: publish to the gallery, or share a link-only image that stays
+      out of search.</li>
+    <li><strong>Original file served</strong>, so colours and sharpness survive the trip.</li>
+  </ul>
+
+  <h2>{{SITE_NAME}} vs ImgBB (free plan)</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col">Feature</th><th scope="col" class="own">{{SITE_NAME}}</th><th scope="col">ImgBB free</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Account needed</th><td class="own">No</td><td>No to upload</td></tr>
+        <tr><th scope="row">Maximum image size</th><td class="own">{{MAX_UPLOAD}}</td><td>32 MB</td></tr>
+        <tr><th scope="row">Direct image links</th><td class="own">Yes</td><td>Yes</td></tr>
+        <tr><th scope="row">BBCode and HTML embeds</th><td class="own">Yes</td><td>Yes</td></tr>
+        <tr><th scope="row">Ads</th><td class="own">None</td><td>Yes</td></tr>
+        <tr><th scope="row">Image library and albums</th><td class="own">No</td><td>With an account</td></tr>
+        <tr><th scope="row">Upload API</th><td class="own">No</td><td>Yes</td></tr>
+        <tr><th scope="row">Price</th><td class="own">Free</td><td>Free, with a Pro upgrade</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">ImgBB limits and plan details were checked in November 2026 and can change. See
+    ImgBB's own pricing page for the current numbers.</p>
+
+  <h2>How to switch from ImgBB</h2>
+  <ol>
+    <li>Upload the original image to <a href="/">the {{SITE_NAME}} home page</a> — drag it in, choose a file,
+      or paste from the clipboard.</li>
+    <li>Copy the format you need. Forums usually take <strong>BBCode</strong>; Reddit, GitHub and Discord
+      take <strong>Markdown</strong>; a website takes the <strong>direct link</strong>.</li>
+    <li>Paste it where the old ImgBB link was. Keep the original file until you have checked the new link
+      in place.</li>
+  </ol>
+
+  <h2>When ImgBB may still suit you</h2>
+  <p>ImgBB gives registered users an image library, albums and an upload API, and its Pro plan adds more
+    storage and larger files. {{SITE_NAME}} deliberately has no accounts or image manager on the public
+    site: uploads are anonymous and managed by link. If your workflow depends on a searchable library or
+    API automation, ImgBB is the better fit for that part. If you just need a link that holds a big file,
+    {{SITE_NAME}} is simpler and has the higher ceiling.</p>
+
+  <h2>Common questions</h2>
+  <h3>Do I need to install anything?</h3>
+  <p>No. Uploads happen in the browser. There is no extension, desktop app or sign-in step.</p>
+  <h3>Is there a limit on how many images I can upload?</h3>
+  <p>There is no storage quota. To prevent abuse, uploads are rate-limited to 30 per hour from one IP
+    address.</p>
+  <h3>Can I delete an image later?</h3>
+  <p>The public site has no account area, so there is no delete button. Use the Report link on the image
+    page or email <a href="mailto:{{CONTACT}}">{{CONTACT}}</a> to have an image removed.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload an image</a></p>
+</main>

@@ -1,0 +1,62 @@
+<main class="content-page">
+  <h1>Image hosting for forums, Reddit and blogs</h1>
+  <p class="lede">Most forums don't let you paste an image straight into a post. They expect a BBCode tag
+    pointing at a hosted file, or a direct URL. {{SITE_NAME}} uploads your image and hands you the exact
+    code for each place you post, so the first paste works.</p>
+
+  <h2>Which code to use where</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col">Where you are posting</th><th scope="col" class="own">Copy this</th><th scope="col">Looks like</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">phpBB, vBulletin, XenForo, Invision, most forums</th><td class="own">BBCode</td><td><code>[img]…[/img]</code></td></tr>
+        <tr><th scope="row">Reddit, GitHub, Discord, Notion</th><td class="own">Markdown</td><td><code>![name](url)</code></td></tr>
+        <tr><th scope="row">A blog, website or CMS</th><td class="own">HTML</td><td><code>&lt;img src="…" alt="…"&gt;</code></td></tr>
+        <tr><th scope="row">Email, chat, a signature, a CSS file</th><td class="own">Direct link</td><td>the image URL itself</td></tr>
+        <tr><th scope="row">Sharing the gallery page instead</th><td class="own">Link</td><td>the <code>/s/…</code> page</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Step by step</h2>
+  <ol>
+    <li>Open the <a href="/">uploader</a> and add your image — drag and drop, choose a file, or paste a
+      screenshot with Ctrl&nbsp;+&nbsp;V.</li>
+    <li>Wait for “Published”. The result shows tabs for each link format.</li>
+    <li>Pick <strong>BBCode</strong> for a forum, <strong>Markdown</strong> for Reddit, or
+      <strong>HTML</strong> for a blog, then press Copy.</li>
+    <li>Paste it into your post. Use the forum's preview button before submitting if it has one.</li>
+  </ol>
+
+  <h2>Keeping images visible on a forum</h2>
+  <ul class="checks">
+    <li><strong>Use the direct link, not the page link.</strong> A forum loads the image itself from the
+      direct URL; the page link only opens the viewer.</li>
+    <li><strong>Keep the file under the forum's limit.</strong> Some boards resize or reject images above a
+      few hundred kilobytes even when the host accepts them. {{SITE_NAME}} takes up to {{MAX_UPLOAD}}, but
+      the board's own rules still apply.</li>
+    <li><strong>Use a sensible file name.</strong> It becomes the image title and the alt text, which helps
+      the post and image search. “brake-pad-wear.jpg” beats “IMG_2043.jpg”.</li>
+    <li><strong>Don't hotlink images you don't own.</strong> Hosting your own copy is fine; reposting
+      someone else's copyrighted image is not.</li>
+  </ul>
+
+  <h2>What about signatures and avatars?</h2>
+  <p>Signatures and avatars usually accept a direct image URL and often have a strict pixel or file-size
+    cap. Upload the image, copy the direct link, and paste it into the signature or avatar field. If the
+    board rejects it, reduce the dimensions first — the host will accept the smaller file just as well.</p>
+
+  <h2>Common questions</h2>
+  <h3>Do I need an account on the image host?</h3>
+  <p>No. Upload and copy the link; there is nothing to sign up for. That also means there is no library to
+    browse later — keep the links you want to reuse.</p>
+  <h3>Will the image stay in my forum post?</h3>
+  <p>As long as the upload stays available. We don't expire images on a timer, but a free service can't
+    guarantee permanence. For a tutorial or a post you expect to last for years, keep a local copy.</p>
+  <h3>Can I post the same image on several forums?</h3>
+  <p>Yes. One upload gives one URL, and you can paste it into as many posts as you like.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload and copy BBCode</a></p>
+</main>
