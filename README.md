@@ -184,6 +184,7 @@ index.php            Front controller (all routes)
 .htaccess            Sends requests to index.php; blocks app/ and dotfiles
 .user.ini            PHP upload and time limits
 site.css, site.js    Public site
+qrcode.js            QR code generator (qrcode-generator 1.4.4, MIT) used on upload results
 icons.js, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png, site.webmanifest
 og-image.png         Share image for the home page
 assets/admin/        Admin page script and styles

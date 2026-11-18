@@ -71,7 +71,46 @@ function shareBox(img) {
     el('div', { class: 'copy-row' },
       input,
       el('button', { class: 'btn primary', title: 'Copy', onclick: () => copyText(input.value) }, icon('copy', 16), 'Copy'),
-      el('a', { class: 'btn', href: img.page_url, target: '_blank', rel: 'noopener', title: 'Open' }, icon('external', 16))));
+      el('a', { class: 'btn', href: img.page_url, target: '_blank', rel: 'noopener', title: 'Open' }, icon('external', 16))),
+    qrBox(img));
+}
+
+// Draws a QR code for text onto a canvas (black on white, so every scanner can read it)
+function qrCanvas(text, scale = 8, margin = 4) {
+  const qr = qrcode(0, 'M');
+  qr.addData(text);
+  qr.make();
+  const count = qr.getModuleCount();
+  const size = (count + margin * 2) * scale;
+  const canvas = el('canvas', { width: size, height: size });
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000';
+  for (let r = 0; r < count; r++) {
+    for (let c = 0; c < count; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect((c + margin) * scale, (r + margin) * scale, scale, scale);
+    }
+  }
+  return canvas;
+}
+
+// QR code that downloads the image when scanned with a phone
+function qrBox(img) {
+  if (typeof qrcode !== 'function' || !img.direct_url) return null;
+  const url = `${img.direct_url}?download=1`;
+  let canvas;
+  try { canvas = qrCanvas(url); } catch { return null; }
+  canvas.className = 'qr-code';
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', `QR code to download ${img.name}`);
+  const base = img.name.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '-') || 'image';
+  return el('div', { class: 'qr-box' },
+    canvas,
+    el('div', { class: 'qr-text' },
+      el('strong', { textContent: 'Scan to download' }),
+      el('span', { textContent: 'Point your phone camera at the code to save this image.' }),
+      el('a', { class: 'btn', href: canvas.toDataURL('image/png'), download: `${base}-qr.png` }, icon('download', 16), 'Save QR')));
 }
 
 // ---------- Uploads ----------

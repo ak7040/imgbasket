@@ -3,7 +3,7 @@
 # Leaves out app/config.php and app/storage/, so updates never overwrite them.
 cd "$(dirname "$0")/.." || exit 1
 rm -f imgbasket.zip
-zip -rq imgbasket.zip .htaccess .user.ini index.php site.css site.js icons.js favicon.svg \
+zip -rq imgbasket.zip .htaccess .user.ini index.php site.css site.js icons.js qrcode.js favicon.svg \
   apple-touch-icon.png icon-192.png icon-512.png og-image.png site.webmanifest assets app vendor \
   -x 'app/config.php' 'app/storage/*' '*.DS_Store'
 echo "Created imgbasket.zip"
