@@ -54,8 +54,20 @@ try {
 } catch (Throwable $e) {
     error_log('ImgBasket: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     if (headers_sent()) exit;
-    // Only the signed-in admin sees the real error; visitors get a generic one
-    if ($adminApi) json_out(['error' => $e->getMessage()], 500);
+    // Only the signed-in admin sees the real error. Before sign-in (e.g. the database is unreachable),
+    // say where to look without revealing details such as the database user.
+    if ($adminApi) {
+        $signedIn = false;
+        try {
+            $signedIn = is_admin();
+        } catch (Throwable) {
+        }
+        json_out(['error' => $signedIn
+            ? $e->getMessage()
+            : ($e instanceof PDOException
+                ? 'The server could not connect to the database. Check the db settings in app/config.php.'
+                : 'Something went wrong on the server. Details are in the server error log.')], 500);
+    }
     if (str_starts_with($path, '/api/')) json_out(['error' => 'Something went wrong. Try again.'], 500);
     html_out(message_page('Something went wrong', 'Please try again in a moment.'), 500);
 }
