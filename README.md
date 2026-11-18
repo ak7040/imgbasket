@@ -71,6 +71,12 @@ file through, and only for those startup requests (`MadelineSelfRestart=1`); eve
 `vendor/` is blocked. If the host stops the worker, it's started again on the next upload or download,
 which takes a few seconds. Errors go to `app/storage/telegram/MadelineProto.log`.
 
+**Updating MadelineProto:** after `composer update`, add `vendor/` with **`git add -f vendor`**, not a
+plain `git add`. Some libraries ship `.gitignore` files that would otherwise silently leave required files
+out (for example MadelineProto's `Broadcast.php`), and the site then fails on the server with
+"Class … not found". Check that nothing is left out with `git ls-files --others --ignored --exclude-standard vendor`,
+which should print nothing.
+
 **Your account and visitors' uploads:** everything visitors upload is stored in your Telegram account.
 If someone uploads illegal content, Telegram may restrict or ban that account. Consider a separate
 Telegram account just for ImgBasket, and check **Public uploads** in the admin regularly.
