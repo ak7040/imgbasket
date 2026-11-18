@@ -1,0 +1,5 @@
+# Bridge for the admin subdomain: everything goes to index.php, which loads the main site
+Options -Indexes
+DirectoryIndex index.php
+RewriteEngine On
+RewriteRule ^ index.php [L,QSA]

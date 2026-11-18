@@ -144,7 +144,9 @@ function site_robots(): never
 {
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: public, max-age=3600');
-    echo "User-agent: *\nDisallow: /admin\nDisallow: /api/\nAllow: /\n\nSitemap: " . public_url() . "/sitemap.xml\n";
+    // With an admin subdomain there's no /admin here to hide (and naming it would only advertise it)
+    $admin = admin_host() === '' ? "Disallow: /admin\n" : '';
+    echo "User-agent: *\n{$admin}Disallow: /api/\nAllow: /\n\nSitemap: " . public_url() . "/sitemap.xml\n";
     exit;
 }
 

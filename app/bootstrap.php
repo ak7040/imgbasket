@@ -80,6 +80,49 @@ function public_url(): string
     return rtrim($url, '/');
 }
 
+// Host name of this request, lowercase, without the port
+function request_host(): string
+{
+    return strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+}
+
+// The admin's own host name (e.g. admin.imgbasket.com), or '' to keep the admin at /admin
+function admin_host(): string
+{
+    return strtolower(trim((string) config('admin_host', '')));
+}
+
+function on_admin_host(): bool
+{
+    return admin_host() !== '' && request_host() === admin_host();
+}
+
+// URL path the admin lives under: "/" on its subdomain, "/admin/" otherwise
+function admin_base(): string
+{
+    return on_admin_host() ? '/' : '/admin/';
+}
+
+// The admin page's own files. Normally the web server sends them directly; this covers a
+// subdomain whose folder is separate from the main site (see extras/admin-subdomain).
+function serve_admin_asset(string $path): void
+{
+    $types = [
+        '/assets/admin/app.js' => 'application/javascript',
+        '/assets/admin/style.css' => 'text/css',
+        '/icons.js' => 'application/javascript',
+        '/favicon.svg' => 'image/svg+xml',
+        '/site.css' => 'text/css',
+    ];
+    if (!isset($types[$path])) return;
+    $file = dirname(APP_DIR) . $path;
+    header('Content-Type: ' . $types[$path] . '; charset=utf-8');
+    header('Cache-Control: public, max-age=3600');
+    header('Content-Length: ' . filesize($file));
+    readfile($file);
+    exit;
+}
+
 function site_name(): string
 {
     return (string) config('site_name', 'ImgBasket');

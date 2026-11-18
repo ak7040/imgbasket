@@ -51,6 +51,24 @@ The database tables are created automatically on first use.
 **Updating:** run `scripts/package.sh`, then upload and extract the zip over the old files.
 `app/config.php` and `app/storage/` are never in the zip, so they're kept.
 
+## Admin on a subdomain (recommended)
+
+Put the admin at `https://admin.imgbasket.com` instead of `imgbasket.com/admin`. The main site then has
+no admin at all, the sign-in cookie never reaches the public site, and the subdomain is kept out of
+search engines (`noindex`, and its `robots.txt` blocks everything). It's the same installation, with
+one database and one config.
+
+1. **hPanel → Domains → Subdomains:** create `admin.imgbasket.com`. If hPanel lets you choose its
+   folder, pick **`public_html`** itself (the main site's folder) and skip step 2.
+2. **Separate folder:** if hPanel created a folder of its own instead (usually `public_html/admin`),
+   upload the two files from `extras/admin-subdomain/` (`index.php` and `.htaccess`) into it. They
+   load the main site from the folder above. If the subdomain's folder is somewhere else, change
+   `MAIN_SITE` in that `index.php` to the main site's folder.
+3. **SSL:** turn on SSL for the subdomain in hPanel.
+4. **Config:** set `'admin_host' => 'admin.imgbasket.com'` in `app/config.php`.
+
+Open `https://admin.imgbasket.com` and sign in. To go back to `/admin`, set `admin_host` to `''`.
+
 ## Run locally
 
 ```sh
@@ -67,7 +85,8 @@ scripts/dev.sh                            # http://127.0.0.1:8080
 | `contact_email` | Shown on Terms, Privacy and Report links, for takedown requests |
 | `google_site_verification` | Optional code from Google Search Console's "HTML tag" method |
 | `public_url` | Your site's address, e.g. `https://imgbasket.com`. Used in share links. |
-| `admin_password` | Password for `/admin` |
+| `admin_password` | Password for the admin |
+| `admin_host` | Admin subdomain, e.g. `admin.imgbasket.com`. Empty keeps the admin at `/admin`. |
 | `db` | MySQL host, name, user, password |
 | `telegram.bot_token` / `telegram.channel_id` | Your bot and private channel |
 | `public_max_upload` | Max size of visitors' uploads in bytes. `0` means only PHP's limit applies. |
@@ -135,7 +154,8 @@ index.php            Front controller (all routes)
 site.css, site.js    Public site
 icons.js, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png, site.webmanifest
 og-image.png         Share image for the home page
-admin/               Admin page script and styles
+assets/admin/        Admin page script and styles
+extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
 app/                 PHP code, config, page templates (views/), and storage/ (not web-accessible)
 scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php
 ```

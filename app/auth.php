@@ -38,14 +38,15 @@ function set_admin_cookie(string $value, int $maxAge): void
 {
     setcookie(ADMIN_COOKIE, $value, [
         'expires' => $maxAge ? time() + $maxAge : time() - 3600,
-        'path' => '/admin',
+        // Host-only cookie: on the admin subdomain it's never sent to the public site
+        'path' => rtrim(admin_base(), '/') ?: '/',
         'secure' => is_https(),
         'httponly' => true,
         'samesite' => 'Strict',
     ]);
 }
 
-// POST /admin/api/admin/login { password }: at most 10 attempts per IP every 15 minutes
+// POST <admin>/api/admin/login { password }: at most 10 attempts per IP every 15 minutes
 function admin_login(): never
 {
     if (admin_password() === '') json_out(['error' => 'Set admin_password in app/config.php first'], 503);

@@ -1,6 +1,6 @@
 <?php
-// Admin API at /admin/api/..., used by admin/app.js. $path is relative to /admin,
-// e.g. "/api/files/12/share".
+// Admin API, used by assets/admin/app.js: at /admin/api/... or, with an admin subdomain, at
+// /api/... there. $path is always relative to the admin, e.g. "/api/files/12/share".
 
 function admin_route(string $method, string $path): never
 {
@@ -198,7 +198,7 @@ function admin_file_content(string $id, string $what): never
         // Small preview for gallery tiles; falls back to the original when none can be made
         $thumb = thumbnail($file, 'grid');
         if ($thumb) send_thumbnail($thumb);
-        header("Location: /admin/api/files/{$file['id']}/raw", true, 302);
+        header('Location: ' . admin_base() . "api/files/{$file['id']}/raw", true, 302);
         exit;
     }
     send_file($file, $what === 'raw', 'private, max-age=86400');

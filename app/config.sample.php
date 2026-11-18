@@ -16,8 +16,13 @@ return [
     // Your site's address, without a trailing slash. Used in share links and link previews.
     'public_url' => 'https://imgbasket.com',
 
-    // Password for https://your-site/admin. Use a long, unique one.
+    // Password for the admin. Use a long, unique one.
     'admin_password' => '',
+
+    // Optional: put the admin on its own subdomain, e.g. 'admin.imgbasket.com' (no https://).
+    // The admin is then at https://admin.imgbasket.com and imgbasket.com/admin no longer exists.
+    // Leave empty to keep the admin at https://imgbasket.com/admin.
+    'admin_host' => '',
 
     // hPanel > Databases > MySQL Databases
     'db' => [
