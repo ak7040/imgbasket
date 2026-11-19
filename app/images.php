@@ -24,38 +24,59 @@ function thumb_spec(string $kind): array
 {
     $webp = function_exists('imagewebp');
     return match ($kind) {
-        'og' => ['max' => 1200, 'ext' => 'jpg'],
-        'grid' => ['max' => 640, 'ext' => $webp ? 'webp' : 'jpg'],
+        'og' => ['max' => 1200, 'ext' => 'jpg', 'mime' => 'image/jpeg'],
+        'grid' => $webp
+            ? ['max' => 640, 'ext' => 'webp', 'mime' => 'image/webp']
+            : ['max' => 640, 'ext' => 'jpg', 'mime' => 'image/jpeg'],
     };
 }
 
-function thumb_path(array $file, string $kind): string
+// Returns the stored preview, making it and sending it to Telegram on first use; null if it can't
+// be made. $source is the just-uploaded temp file; without it the original is fetched from Telegram
+// (only for files uploaded before previews were stored there).
+function ensure_thumbnail(array $file, string $kind, ?string $source = null): ?array
 {
-    return storage_dir('cache') . "/{$file['id']}.$kind." . thumb_spec($kind)['ext'];
-}
-
-// Returns the thumbnail's path, creating it on first use; null if it can't be made
-function thumbnail(array $file, string $kind, ?string $source = null): ?string
-{
-    $target = thumb_path($file, $kind);
-    if (is_file($target)) return $target;
+    $thumb = get_thumb($file, $kind);
+    if ($thumb) return $thumb;
     if (!is_image($file) || !function_exists('imagecreatetruecolor')) return null;
 
-    $temp = null;
+    $tempSource = null;
+    $tempThumb = null;
     try {
-        $source ??= cached_path($file);
-        if (!$source) {
+        if ($source === null) {
             // Big originals aren't worth downloading just for a preview
-            if ($file['size'] > 200 * 1024 * 1024 || !storage_ready()) return null;
-            $source = $temp = tempnam(sys_get_temp_dir(), 'imgbasket');
-            download_to($file, $temp);
+            if ((int) $file['size'] > 200 * 1024 * 1024 || !storage_ready()) return null;
+            @set_time_limit(0);
+            $tempSource = $source = tempnam(storage_dir('tmp'), 'orig');
+            download_to($file, $source);
         }
-        return make_thumbnail($source, $target, $kind);
+        $tempThumb = tempnam(storage_dir('tmp'), 'thumb');
+        if (!make_thumbnail($source, $tempThumb, $kind)) return null;
+        clearstatcache(true, $tempThumb);
+        $size = (int) filesize($tempThumb);
+        $spec = thumb_spec($kind);
+        $sent = tg_send_part(
+            $tempThumb, 0, $size,
+            "preview-{$file['id']}-$kind.{$spec['ext']}", "Preview of {$file['name']}", $spec['mime']
+        );
+        $info = @getimagesize($tempThumb);
+        $inserted = q_exec(
+            'INSERT IGNORE INTO thumbs (file_id, kind, tg_file_id, tg_message_id, size, mime, width, height)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [$file['id'], $kind, (string) ($sent['file_id'] ?? ''), (int) $sent['message_id'],
+             $size, $spec['mime'], $info[0] ?? null, $info[1] ?? null]
+        );
+        if ($inserted === 0) {
+            // Another request stored this preview first; drop the duplicate from Telegram
+            tg_delete_chunk(['tg_file_id' => (string) ($sent['file_id'] ?? ''), 'tg_message_id' => (int) $sent['message_id']]);
+        }
+        return get_thumb($file, $kind);
     } catch (Throwable $e) {
         error_log("No $kind thumbnail for file {$file['id']}: " . $e->getMessage());
         return null;
     } finally {
-        if ($temp) @unlink($temp);
+        if ($tempSource) @unlink($tempSource);
+        if ($tempThumb) @unlink($tempThumb);
     }
 }
 
@@ -115,20 +136,29 @@ function make_thumbnail(string $source, string $target, string $kind): ?string
     return $target;
 }
 
-// Builds both thumbnails right after upload, from the uploaded temp file
+// Builds both previews right after upload, from the uploaded temp file, and stores them in Telegram
 function prepare_thumbnails(array $file, string $source): void
 {
     if (!is_image($file)) return;
-    foreach (['og', 'grid'] as $kind) thumbnail($file, $kind, $source);
+    foreach (['og', 'grid'] as $kind) ensure_thumbnail($file, $kind, $source);
 }
 
-function send_thumbnail(string $path): never
+// Sends a stored preview to the browser, or redirects to $fallback (the original) when none can be
+// made
+function send_thumbnail(array $file, string $kind, ?string $fallback = null): never
 {
+    @set_time_limit(0);
+    $thumb = ensure_thumbnail($file, $kind);
+    if (!$thumb) {
+        header('Location: ' . ($fallback ?? raw_path($file)), true, 302);
+        exit;
+    }
     end_output_buffers();
-    header('Content-Type: ' . (str_ends_with($path, '.webp') ? 'image/webp' : 'image/jpeg'));
-    header('Content-Length: ' . filesize($path));
+    header('Content-Type: ' . ($thumb['mime'] ?: thumb_spec($kind)['mime']));
+    header('Content-Length: ' . (int) $thumb['size']);
     header('Cache-Control: public, max-age=86400');
     header('X-Content-Type-Options: nosniff');
-    readfile($path);
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') exit;
+    tg_stream_thumb($thumb);
     exit;
 }

@@ -18,11 +18,15 @@ own account's **Saved Messages** (default), or in a private channel through a bo
   document, up to 2 GB (4 GB with Premium). You log in once from the admin by scanning a QR code.
 - **Bot (alternative):** each file goes to a private channel through a bot. Files over 19 MB are split
   into pieces, because bots can only download 20 MB at a time.
-- MySQL stores the folder tree and which messages make up each file.
-- Files up to 25 MB are also cached in `app/storage/`, so they load fast. Larger files are streamed
-  from Telegram.
+- MySQL stores the folder tree and which messages make up each file and its previews.
+- No image data is kept on the server's disk: every request streams the file from Telegram, so
+  deleting a file in the admin really removes it everywhere.
 - Images get two small previews made with GD: a JPEG for link previews in chat apps (WhatsApp,
-  Telegram, Discord, X…) and a WebP for gallery tiles.
+  Telegram, Discord, X…) and a WebP for gallery tiles. The previews are stored in Telegram too, as
+  extra messages next to the file (two per image).
+- Delete files in the admin, not in the Telegram app: the site's database still points at `files`
+  (and the preview messages) otherwise. The admin's delete removes the database rows and every
+  Telegram message (original and previews).
 
 ## Requirements
 
@@ -61,6 +65,15 @@ Files stored one way keep working after switching to the other.
 
 **Updating:** pull with hPanel → Git, or upload and extract a new `imgbasket.zip`.
 `app/config.php` and `app/storage/` are never in the repository or the zip, so they're kept.
+
+Older versions kept image copies in `app/storage/cache/`; that folder is deleted on the first request
+after upgrading. Preview images for files uploaded before the upgrade are made (and sent to
+Telegram) the first time they are shown. To prepare them all at once, run this from the site's root
+over SSH (or as a one-off cron job):
+
+```sh
+php scripts/backfill-thumbs.php
+```
 
 ### How Saved Messages works on shared hosting
 
@@ -123,7 +136,6 @@ scripts/dev.sh                            # http://127.0.0.1:8080
 | `telegram.bot_token` / `telegram.channel_id` | Your bot and private channel, for bot storage |
 | `public_max_upload` | Max size of visitors' uploads in bytes. `0` means only PHP's limit applies. |
 | `public_uploads_per_hour` | Uploads per IP address per hour (default 30) |
-| `cache_max_file` | Files up to this size are cached on disk (default 25 MB) |
 | `ip_header` | Set to `HTTP_X_FORWARDED_FOR` if every upload shows the same IP (a CDN in front) |
 
 **Upload size:** PHP's limit applies. `.user.ini` asks for 2 GB, but the host may cap it. Raise it

@@ -149,15 +149,11 @@ function saved_download_to(int $messageId, string $path): void
     saved_api()->downloadToFile(saved_message($messageId), $path);
 }
 
-// Streams a large file to the browser (with range support), with MadelineProto writing the headers
-function saved_stream(int $messageId, array $file): void
+// Streams a message's bytes to the browser, or a byte range; $end is exclusive, -1 means the end.
+// MadelineProto calls the callback with one chunk at a time.
+function saved_download_callable(int $messageId, callable $write, int $offset = 0, int $end = -1): void
 {
-    saved_api()->downloadToBrowser(
-        saved_message($messageId),
-        size: (int) $file['size'],
-        name: $file['name'],
-        mime: $file['mime'] ?: 'application/octet-stream',
-    );
+    saved_api()->downloadToCallable(saved_message($messageId), $write, null, false, $offset, $end);
 }
 
 function saved_delete_message(int $messageId): void

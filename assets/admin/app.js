@@ -373,8 +373,11 @@ function folderCard(f) {
   return card;
 }
 
+// Everything is streamed from Telegram, so keep the grid light: very large videos and animated
+// GIFs are shown as placeholders instead of being pulled down just for a preview
+const PREVIEW_MAX = 25 * 1024 * 1024;
 function previewable(f) {
-  return f.size <= (state.summary?.cacheMaxFile ?? 25 * 1024 * 1024);
+  return f.size <= PREVIEW_MAX;
 }
 
 // Images get a small server-made preview of any size; animated GIFs use the original to keep moving

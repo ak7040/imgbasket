@@ -1,35 +1,12 @@
 <?php
-// Storing files in Telegram, the local disk cache, and sending files to browsers
+// Storing files in Telegram, and sending files to browsers. Nothing is kept on this server's disk:
+// originals and previews both live in Telegram and are streamed from there.
 
 function storage_dir(string $sub): string
 {
     $dir = APP_DIR . '/storage/' . $sub;
     if (!is_dir($dir)) mkdir($dir, 0755, true);
     return $dir;
-}
-
-function cache_max_file(): int
-{
-    return (int) config('cache_max_file', 25 * 1024 * 1024);
-}
-
-function cache_path(array $file): string
-{
-    return storage_dir('cache') . '/' . $file['id'];
-}
-
-function cached_path(array $file): ?string
-{
-    $path = cache_path($file);
-    return is_file($path) && filesize($path) === (int) $file['size'] ? $path : null;
-}
-
-// Removes the cached copy and the thumbnails (<id>.<kind>.<ext>)
-function uncache(int $id): void
-{
-    $dir = storage_dir('cache');
-    @unlink("$dir/$id");
-    foreach (glob("$dir/$id.*") ?: [] as $path) @unlink($path);
 }
 
 // Path of a shared file on the public site, with an extension so forums accept it as an image
@@ -100,7 +77,7 @@ function store_file(string $tmpPath, array $fields): array
     }
 
     $file = get_file($id);
-    if ($size <= cache_max_file()) @copy($tmpPath, cache_path($file));
+    // The previews go to Telegram as well, so the server keeps no image files at all
     prepare_thumbnails($file, $tmpPath);
     return $file;
 }
@@ -108,29 +85,17 @@ function store_file(string $tmpPath, array $fields): array
 function delete_file(array $file): void
 {
     $chunks = file_chunks($file);
+    $thumbs = thumb_rows($file);
     q_exec('DELETE FROM files WHERE id = ?', [$file['id']]);
     foreach ($chunks as $chunk) tg_delete_chunk($chunk);
-    uncache($file['id']);
+    foreach ($thumbs as $thumb) tg_delete_chunk($thumb);
 }
 
-// Writes the whole file to $path (used for thumbnails of files that aren't cached)
+// Writes the whole file to $path (used to build a preview for files uploaded before previews
+// were stored in Telegram)
 function download_to(array $file, string $path): void
 {
     tg_download_file($file, $path);
-}
-
-// Downloads a small file from Telegram into the cache; returns its cached path
-function fill_cache(array $file): ?string
-{
-    $tmp = cache_path($file) . '.' . bin2hex(random_bytes(6)) . '.tmp';
-    try {
-        tg_download_file($file, $tmp);
-        if (filesize($tmp) !== (int) $file['size']) return null;
-        rename($tmp, cache_path($file));
-        return cache_path($file);
-    } finally {
-        if (is_file($tmp)) @unlink($tmp);
-    }
 }
 
 function end_output_buffers(): void
@@ -138,45 +103,21 @@ function end_output_buffers(): void
     while (ob_get_level() > 0) ob_end_clean();
 }
 
-// Sends a file to the browser. Files up to cache_max_file are served from the local cache (filled
-// from Telegram on first view), with range support so videos can be seeked; bigger ones stream
-// straight from Telegram.
+// Sends a file to the browser straight from Telegram. Saved Messages files support byte ranges, so
+// videos can be seeked; bot storage is streamed piece by piece without ranges.
 function send_file(array $file, bool $inline, string $cacheControl): never
 {
     @set_time_limit(0);
     end_output_buffers();
 
     $size = (int) $file['size'];
-    $headers = function () use ($file, $inline, $cacheControl): void {
-        $name = $file['name'];
-        $fallback = preg_replace('/[^\x20-\x7e]|["\\\\]/', '_', $name);
-        header('Content-Type: ' . ($file['mime'] ?: 'application/octet-stream'));
-        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fallback\"; filename*=UTF-8''" . rawurlencode($name));
-        // Uploaded HTML/SVG must not run scripts on this site
-        header('Content-Security-Policy: sandbox');
-        header('X-Content-Type-Options: nosniff');
-        header("Cache-Control: $cacheControl");
-    };
+    $chunks = file_chunks($file);
+    $single = count($chunks) === 1 && !chunk_is_bot($chunks[0]);
 
-    $cached = cached_path($file) ?? ($size <= cache_max_file() ? fill_cache($file) : null);
-    if (!$cached) {
-        if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {
-            $headers();
-            header("Content-Length: $size");
-            exit;
-        }
-        tg_stream_file($file, function () use ($headers, $size): void {
-            $headers();
-            header("Content-Length: $size");
-            header('Accept-Ranges: none');
-        });
-    }
-
-    $headers();
-    header('Accept-Ranges: bytes');
     $start = 0;
     $end = $size - 1;
-    if (preg_match('/^bytes=(\d*)-(\d*)$/', (string) ($_SERVER['HTTP_RANGE'] ?? ''), $m) && ($m[1] !== '' || $m[2] !== '')) {
+    $partial = false;
+    if ($single && preg_match('/^bytes=(\d*)-(\d*)$/', (string) ($_SERVER['HTTP_RANGE'] ?? ''), $m) && ($m[1] !== '' || $m[2] !== '')) {
         if ($m[1] === '') {
             $start = max(0, $size - (int) $m[2]);
         } else {
@@ -188,21 +129,32 @@ function send_file(array $file, bool $inline, string $cacheControl): never
             header("Content-Range: bytes */$size");
             exit;
         }
+        $partial = true;
+    }
+
+    $name = $file['name'];
+    $fallback = preg_replace('/[^\x20-\x7e]|["\\\\]/', '_', $name);
+    header('Content-Type: ' . ($file['mime'] ?: 'application/octet-stream'));
+    header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fallback\"; filename*=UTF-8''" . rawurlencode($name));
+    // Uploaded HTML/SVG must not run scripts on this site
+    header('Content-Security-Policy: sandbox');
+    header('X-Content-Type-Options: nosniff');
+    header("Cache-Control: $cacheControl");
+    header('Accept-Ranges: ' . ($single ? 'bytes' : 'none'));
+    if ($partial) {
         http_response_code(206);
         header("Content-Range: bytes $start-$end/$size");
+        header('Content-Length: ' . ($end - $start + 1));
+    } else {
+        header("Content-Length: $size");
     }
-    header('Content-Length: ' . ($end - $start + 1));
-    if ($_SERVER['REQUEST_METHOD'] === 'HEAD') exit;
-    $fh = fopen($cached, 'rb');
-    fseek($fh, $start);
-    $left = $end - $start + 1;
-    while ($left > 0 && !feof($fh) && !connection_aborted()) {
-        $buf = fread($fh, (int) min(1 << 16, $left));
-        echo $buf;
-        $left -= strlen($buf);
-        flush();
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD' || $size === 0) exit;
+
+    if ($single) {
+        tg_stream_range((int) $chunks[0]['tg_message_id'], $start, $end === $size - 1 ? -1 : $end + 1);
+    } else {
+        tg_stream_chunks($chunks);
     }
-    fclose($fh);
     exit;
 }
 

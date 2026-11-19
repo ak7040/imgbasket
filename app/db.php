@@ -21,10 +21,10 @@ function db(): PDO
     return $pdo;
 }
 
-// Creates the tables on first run
+// Creates the tables on first run, and adds new ones on later versions
 function ensure_schema(PDO $pdo): void
 {
-    $marker = storage_dir('state') . '/schema-v1';
+    $marker = storage_dir('state') . '/schema-v2';
     if (is_file($marker)) return;
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS folders (
@@ -64,6 +64,20 @@ function ensure_schema(PDO $pdo): void
             PRIMARY KEY (file_id, idx),
             FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Thumbnails are Telegram messages too: nothing image-shaped is kept on the server's disk
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS thumbs (
+            file_id INT NOT NULL,
+            kind VARCHAR(10) NOT NULL,
+            tg_file_id VARCHAR(255) NOT NULL DEFAULT '',
+            tg_message_id BIGINT NOT NULL,
+            size BIGINT NOT NULL,
+            mime VARCHAR(100) NOT NULL,
+            width INT NULL,
+            height INT NULL,
+            PRIMARY KEY (file_id, kind),
+            FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     // Rate limiting: public uploads and admin password attempts
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS events (
@@ -73,6 +87,13 @@ function ensure_schema(PDO $pdo): void
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX (kind, ip, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Older versions kept image copies on the server's disk; remove them so nothing image-shaped
+    // stays there. Telegram is the only storage now.
+    $cache = APP_DIR . '/storage/cache';
+    if (is_dir($cache)) {
+        foreach (glob($cache . '/*') ?: [] as $path) @unlink($path);
+        @rmdir($cache);
+    }
     touch($marker);
 }
 
@@ -114,6 +135,24 @@ function folder_row(?array $r): ?array
     $r['parent_id'] = $r['parent_id'] === null ? null : (int) $r['parent_id'];
     if (isset($r['file_count'])) $r['file_count'] = (int) $r['file_count'];
     return $r;
+}
+
+function thumb_row(?array $r): ?array
+{
+    if (!$r) return null;
+    foreach (['file_id', 'tg_message_id', 'size'] as $k) $r[$k] = (int) $r[$k];
+    foreach (['width', 'height'] as $k) $r[$k] = $r[$k] === null ? null : (int) $r[$k];
+    return $r;
+}
+
+function get_thumb(array $file, string $kind): ?array
+{
+    return thumb_row(q_one('SELECT * FROM thumbs WHERE file_id = ? AND kind = ?', [$file['id'], $kind]));
+}
+
+function thumb_rows(array $file): array
+{
+    return array_map('thumb_row', q_all('SELECT * FROM thumbs WHERE file_id = ?', [$file['id']]));
 }
 
 function get_file(int $id): ?array

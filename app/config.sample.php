@@ -57,9 +57,6 @@ return [
     'public_max_upload' => 0,
     'public_uploads_per_hour' => 30,
 
-    // Files up to this size are kept on the server's disk, so they load fast and don't hit Telegram
-    'cache_max_file' => 25 * 1024 * 1024,
-
     // Where the visitor's IP comes from. Leave empty to use the connection's address. If every
     // upload shows the same IP (because a CDN or proxy sits in front), set e.g. 'HTTP_X_FORWARDED_FOR'.
     'ip_header' => '',

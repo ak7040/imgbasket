@@ -114,9 +114,8 @@ function site_image_page(string $token): never
     $file = get_file_by_token($token) ?? not_found_page();
     // Chat apps read og:image from this page for the link preview, so make sure it exists
     $og = null;
-    if (is_image($file) && ($thumb = thumbnail($file, 'og'))) {
-        [$w, $h] = getimagesize($thumb);
-        $og = ['url' => public_url() . "/t/$token.jpg", 'width' => $w, 'height' => $h];
+    if (is_image($file) && ($thumb = ensure_thumbnail($file, 'og'))) {
+        $og = ['url' => public_url() . "/t/$token.jpg", 'width' => $thumb['width'], 'height' => $thumb['height']];
     }
     html_out(image_page($file, public_url() . "/s/$token", public_url() . raw_path($file), raw_path($file), $og));
 }
@@ -125,7 +124,7 @@ function site_file(string $token): never
 {
     $file = get_file_by_token($token) ?? not_found_page();
     keep_unlisted_out_of_search($file);
-    if (!cached_path($file) && !storage_ready()) {
+    if (!storage_ready()) {
         html_out(message_page('Offline', 'This file is unavailable right now. Try again later.'), 503);
     }
     send_file($file, empty($_GET['download']), 'public, max-age=300');
@@ -136,10 +135,7 @@ function site_thumbnail(string $token, string $ext): never
 {
     $file = get_file_by_token($token) ?? not_found_page();
     keep_unlisted_out_of_search($file);
-    $thumb = thumbnail($file, $ext === 'jpg' ? 'og' : 'grid');
-    if ($thumb) send_thumbnail($thumb);
-    header('Location: ' . raw_path($file), true, 302);
-    exit;
+    send_thumbnail($file, $ext === 'jpg' ? 'og' : 'grid');
 }
 
 // Unlisted files must not show up in Google Images. Chat apps ignore this header, so link

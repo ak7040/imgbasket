@@ -5,7 +5,7 @@
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $entry = '/vendor/danog/madelineproto/src/Ipc/Runner/entry.php';
 if ($path === $entry && ($_GET['MadelineSelfRestart'] ?? '') === '1') return false;
-if (preg_match('#^/(app|vendor)(/|$)|^/composer\.(json|lock)$|/\.#', $path)) {
+if (preg_match('#^/(app|vendor|scripts)(/|$)|^/composer\.(json|lock)$|/\.#', $path)) {
     http_response_code(403);
     exit('Forbidden');
 }

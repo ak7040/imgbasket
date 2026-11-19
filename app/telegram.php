@@ -82,34 +82,47 @@ function tg_download_file(array $file, string $path): void
     }
 }
 
-// Streams a file too big for the cache straight to the browser. $headers sends ours.
-function tg_stream_file(array $file, callable $headers): never
+// Streams every stored piece of a file to the browser, in order
+function tg_stream_chunks(array $chunks): void
 {
-    $chunks = file_chunks($file);
-    if (count($chunks) === 1 && !chunk_is_bot($chunks[0])) {
-        // MadelineProto writes the headers itself (including range support and the sandbox policy)
-        saved_stream((int) $chunks[0]['tg_message_id'], $file);
-        exit;
-    }
-    $headers();
     foreach ($chunks as $chunk) {
         if (chunk_is_bot($chunk)) {
-            bot_download($chunk['tg_file_id'], function (string $data) {
+            bot_download((string) $chunk['tg_file_id'], function (string $data): void {
                 echo $data;
                 flush();
             });
             continue;
         }
-        $part = tempnam(storage_dir('tmp'), 'part');
-        try {
-            saved_download_to((int) $chunk['tg_message_id'], $part);
-            readfile($part);
+        saved_download_callable((int) $chunk['tg_message_id'], function (string $data, int $offset): void {
+            echo $data;
             flush();
-        } finally {
-            @unlink($part);
-        }
+        });
     }
-    exit;
+}
+
+// Streams one Saved Messages file, or a byte range of it; $end is exclusive, -1 means the end
+function tg_stream_range(int $messageId, int $start, int $end): void
+{
+    saved_download_callable($messageId, function (string $data, int $offset): void {
+        echo $data;
+        flush();
+    }, $start, $end);
+}
+
+// Streams a stored thumbnail to the browser
+function tg_stream_thumb(array $thumb): void
+{
+    if (chunk_is_bot($thumb)) {
+        bot_download((string) $thumb['tg_file_id'], function (string $data): void {
+            echo $data;
+            flush();
+        });
+        return;
+    }
+    saved_download_callable((int) $thumb['tg_message_id'], function (string $data, int $offset): void {
+        echo $data;
+        flush();
+    });
 }
 
 function tg_delete_chunk(array $chunk): void

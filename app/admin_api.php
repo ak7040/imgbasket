@@ -61,7 +61,6 @@ function admin_summary(): never
         'stats' => array_map('intval', $s),
         'folders' => array_map('folder_row', q_all('SELECT id, name, parent_id FROM folders ORDER BY name')),
         'maxFileSize' => php_upload_limit(),
-        'cacheMaxFile' => cache_max_file(),
         'user' => storage_status()['user'] ?? null,
         'publicSiteUrl' => public_url(),
         'adminAuth' => true,
@@ -198,10 +197,7 @@ function admin_file_content(string $id, string $what): never
     $file = find_file_or_404($id);
     if ($what === 'thumb') {
         // Small preview for gallery tiles; falls back to the original when none can be made
-        $thumb = thumbnail($file, 'grid');
-        if ($thumb) send_thumbnail($thumb);
-        header('Location: ' . admin_base() . "api/files/{$file['id']}/raw", true, 302);
-        exit;
+        send_thumbnail($file, 'grid', admin_base() . "api/files/{$file['id']}/raw");
     }
     send_file($file, $what === 'raw', 'private, max-age=86400');
 }

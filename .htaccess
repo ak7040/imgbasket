@@ -9,6 +9,7 @@ DirectoryIndex index.php
 RewriteEngine On
 # App code, config and stored files are never served directly
 RewriteRule ^app(/|$) - [F,L]
+RewriteRule ^scripts(/|$) - [F,L]
 RewriteRule ^composer\.(json|lock)$ - [F,L]
 # Libraries are never served either, except MadelineProto's worker entry point: on hosts without
 # proc_open, MadelineProto starts its Telegram worker by requesting this file from the site itself
