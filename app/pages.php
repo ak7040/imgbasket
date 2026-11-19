@@ -159,6 +159,12 @@ function render_view(string $name, array $vars = []): string
         'HEAD' => common_head(),
         'FOOTER' => site_footer(),
         'CONTACT' => esc(contact_email()),
+        'CSS_URL' => esc(asset_url('/site.css')),
+        'ICONS_URL' => esc(asset_url('/icons.js')),
+        'QRCODE_URL' => esc(asset_url('/qrcode.js')),
+        'SITE_JS_URL' => esc(asset_url('/site.js')),
+        'ADMIN_CSS_URL' => esc(asset_url('/assets/admin/style.css')),
+        'ADMIN_JS_URL' => esc(asset_url('/assets/admin/app.js')),
     ];
     $replace = [];
     foreach ($vars as $k => $v) $replace['{{' . $k . '}}'] = $v;
@@ -259,6 +265,8 @@ function layout(array $o): string
     $body = $o['body'];
     $script = $o['script'] ?? '';
     $footer = site_footer();
+    $css = esc(asset_url('/site.css'));
+    $icons = esc(asset_url('/icons.js'));
     return <<<HTML
 <!doctype html>
 <html lang="en">
@@ -270,7 +278,7 @@ function layout(array $o): string
   $canonical
   $robots
   $common
-  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="$css">
   $head
 </head>
 <body>
@@ -280,7 +288,7 @@ function layout(array $o): string
   </header>
   $body
   $footer
-  <script src="/icons.js"></script>
+  <script src="$icons"></script>
   <script>hydrateIcons();$script</script>
 </body>
 </html>

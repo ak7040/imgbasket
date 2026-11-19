@@ -128,6 +128,15 @@ function site_name(): string
     return (string) config('site_name', 'ImgBasket');
 }
 
+// Static files get a ?v=<mtime> query so a deploy never leaves a stale browser or CDN copy in place.
+// Hostinger's CDN caches compressed variants separately and does not always purge them on deploy.
+function asset_url(string $path): string
+{
+    $file = dirname(APP_DIR) . $path;
+    $mtime = is_file($file) ? filemtime($file) : false;
+    return $path . ($mtime !== false ? '?v=' . $mtime : '');
+}
+
 // Bytes from php.ini notation like "128M"
 function ini_bytes(string $key): int
 {
