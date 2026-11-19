@@ -27,6 +27,7 @@ $rows = q_all(
 $checked = 0;
 $made = 0;
 $failed = 0;
+$gone = 0;
 
 foreach ($rows as $row) {
     $file = file_row($row);
@@ -38,16 +39,26 @@ foreach ($rows as $row) {
     $missing = array_filter(['og', 'grid'], fn(string $kind): bool => get_thumb($file, $kind) === null);
     if (!$missing) continue;
     $checked++;
-    foreach ($missing as $kind) {
-        if (ensure_thumbnail($file, $kind)) {
-            $made++;
-            echo "file {$file['id']}: $kind preview stored\n";
-        } else {
-            $failed++;
-            echo "file {$file['id']}: $kind preview could not be made\n";
+    try {
+        foreach ($missing as $kind) {
+            if (ensure_thumbnail($file, $kind)) {
+                $made++;
+                echo "file {$file['id']}: $kind preview stored\n";
+            } else {
+                $failed++;
+                echo "file {$file['id']}: $kind preview could not be made\n";
+            }
         }
+    } catch (TelegramGone $e) {
+        // The original was deleted in the Telegram app; drop the stale record
+        $gone++;
+        discard_file($file);
+        echo "file {$file['id']}: no longer in Telegram, record removed\n";
     }
 }
 
-printf("Done: %d file(s) needed previews, %d stored, %d failed.\n", $checked, $made, $failed);
+printf(
+    "Done: %d file(s) needed previews, %d stored, %d failed, %d removed as deleted in Telegram.\n",
+    $checked, $made, $failed, $gone
+);
 exit($failed > 0 ? 1 : 0);

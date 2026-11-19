@@ -91,6 +91,17 @@ function delete_file(array $file): void
     foreach ($thumbs as $thumb) tg_delete_chunk($thumb);
 }
 
+// A file whose messages were deleted in the Telegram app: remove the stale database row and any
+// messages that are still there (typically the previews)
+function discard_file(array $file): void
+{
+    try {
+        delete_file($file);
+    } catch (Throwable $e) {
+        error_log("Could not remove gone file {$file['id']}: " . $e->getMessage());
+    }
+}
+
 // Writes the whole file to $path (used to build a preview for files uploaded before previews
 // were stored in Telegram)
 function download_to(array $file, string $path): void

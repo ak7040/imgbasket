@@ -139,7 +139,7 @@ function saved_message(int $messageId): array
     $result = saved_api()->messages->getMessages(id: [$messageId]);
     $message = $result['messages'][0] ?? null;
     if (!$message || ($message['_'] ?? '') === 'messageEmpty' || empty($message['media'])) {
-        throw new RuntimeException("Message $messageId is no longer in Saved Messages");
+        throw new TelegramGone("Message $messageId is no longer in Saved Messages");
     }
     return $message;
 }

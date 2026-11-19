@@ -71,6 +71,9 @@ function ensure_thumbnail(array $file, string $kind, ?string $source = null): ?a
             tg_delete_chunk(['tg_file_id' => (string) ($sent['file_id'] ?? ''), 'tg_message_id' => (int) $sent['message_id']]);
         }
         return get_thumb($file, $kind);
+    } catch (TelegramGone $e) {
+        // The original itself is gone; the caller removes the stale record
+        throw $e;
     } catch (Throwable $e) {
         error_log("No $kind thumbnail for file {$file['id']}: " . $e->getMessage());
         return null;
@@ -144,8 +147,8 @@ function prepare_thumbnails(array $file, string $source): void
 }
 
 // Sends a stored preview to the browser, or redirects to $fallback (the original) when none can be
-// made
-function send_thumbnail(array $file, string $kind, ?string $fallback = null): never
+// made. Throws TelegramGone when the original was deleted in the Telegram app.
+function send_thumbnail(array $file, string $kind, ?string $fallback = null, int $attempt = 0): never
 {
     @set_time_limit(0);
     $thumb = ensure_thumbnail($file, $kind);
@@ -159,6 +162,19 @@ function send_thumbnail(array $file, string $kind, ?string $fallback = null): ne
     header('Cache-Control: public, max-age=86400');
     header('X-Content-Type-Options: nosniff');
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') exit;
-    tg_stream_thumb($thumb);
+    try {
+        tg_stream_thumb($thumb);
+    } catch (TelegramGone $e) {
+        // The preview message itself was deleted in Telegram: forget it and rebuild it once
+        if (headers_sent()) exit;
+        q_exec('DELETE FROM thumbs WHERE file_id = ? AND kind = ?', [$file['id'], $kind]);
+        header_remove();
+        if ($attempt > 0) {
+            // Still gone after rebuilding: let the original's route clean up or serve it
+            header('Location: ' . ($fallback ?? raw_path($file)), true, 302);
+            exit;
+        }
+        send_thumbnail($file, $kind, $fallback, $attempt + 1);
+    }
     exit;
 }

@@ -114,8 +114,16 @@ function site_image_page(string $token): never
     $file = get_file_by_token($token) ?? not_found_page();
     // Chat apps read og:image from this page for the link preview, so make sure it exists
     $og = null;
-    if (is_image($file) && ($thumb = ensure_thumbnail($file, 'og'))) {
-        $og = ['url' => public_url() . "/t/$token.jpg", 'width' => $thumb['width'], 'height' => $thumb['height']];
+    if (is_image($file)) {
+        try {
+            if ($thumb = ensure_thumbnail($file, 'og')) {
+                $og = ['url' => public_url() . "/t/$token.jpg", 'width' => $thumb['width'], 'height' => $thumb['height']];
+            }
+        } catch (TelegramGone $e) {
+            // Deleted in the Telegram app: remove the stale record and show a normal 404
+            discard_file($file);
+            not_found_page();
+        }
     }
     html_out(image_page($file, public_url() . "/s/$token", public_url() . raw_path($file), raw_path($file), $og));
 }
@@ -127,7 +135,17 @@ function site_file(string $token): never
     if (!storage_ready()) {
         html_out(message_page('Offline', 'This file is unavailable right now. Try again later.'), 503);
     }
-    send_file($file, empty($_GET['download']), 'public, max-age=300');
+    try {
+        send_file($file, empty($_GET['download']), 'public, max-age=300');
+    } catch (TelegramGone $e) {
+        // Deleted in the Telegram app: remove the stale record and its remaining messages
+        discard_file($file);
+        if (!headers_sent()) {
+            header_remove();
+            not_found_page();
+        }
+        exit;
+    }
 }
 
 // /t/<token>.jpg for link previews, /t/<token>.webp for gallery tiles
@@ -135,7 +153,19 @@ function site_thumbnail(string $token, string $ext): never
 {
     $file = get_file_by_token($token) ?? not_found_page();
     keep_unlisted_out_of_search($file);
-    send_thumbnail($file, $ext === 'jpg' ? 'og' : 'grid');
+    try {
+        send_thumbnail($file, $ext === 'jpg' ? 'og' : 'grid');
+    } catch (TelegramGone $e) {
+        discard_file($file);
+        if (!headers_sent()) {
+            header_remove();
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo "Not found\n";
+        }
+        exit;
+    }
 }
 
 // Unlisted files must not show up in Google Images. Chat apps ignore this header, so link

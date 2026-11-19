@@ -24,9 +24,10 @@ own account's **Saved Messages** (default), or in a private channel through a bo
 - Images get two small previews made with GD: a JPEG for link previews in chat apps (WhatsApp,
   Telegram, Discord, X…) and a WebP for gallery tiles. The previews are stored in Telegram too, as
   extra messages next to the file (two per image).
-- Delete files in the admin, not in the Telegram app: the site's database still points at `files`
-  (and the preview messages) otherwise. The admin's delete removes the database rows and every
-  Telegram message (original and previews).
+- Deleting files in the Telegram app is detected as well: when a file or preview is requested and
+  Telegram says its message is gone, the site removes the stale database row and any remaining
+  messages, and returns 404. Deleting through the admin is still cleanest, since it removes
+  everything at once.
 
 ## Requirements
 

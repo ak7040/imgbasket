@@ -8,6 +8,12 @@
 require APP_DIR . '/storage_bot.php';
 require APP_DIR . '/storage_saved.php';
 
+// Thrown when Telegram says a stored message or file no longer exists: it was deleted in the
+// Telegram app instead of through the admin, so the database row is stale.
+class TelegramGone extends RuntimeException
+{
+}
+
 function storage_driver(): string
 {
     return config('storage', 'saved_messages') === 'bot' ? 'bot' : 'saved_messages';

@@ -58,7 +58,15 @@ function bot_send_part(string $path, string $filename, string $caption): array
 // Streams one stored piece; $write receives the bytes as they arrive
 function bot_download(string $fileId, callable $write): void
 {
-    $info = bot_call('getFile', ['file_id' => $fileId]);
+    try {
+        $info = bot_call('getFile', ['file_id' => $fileId]);
+    } catch (RuntimeException $e) {
+        // The channel message was deleted in Telegram: the database row is stale
+        if (preg_match('/invalid file_id|file is not found|message to get file/i', $e->getMessage())) {
+            throw new TelegramGone($e->getMessage());
+        }
+        throw $e;
+    }
     $ch = curl_init(bot_base() . '/file/bot' . bot_token() . '/' . $info['file_path']);
     curl_setopt_array($ch, [
         CURLOPT_CONNECTTIMEOUT => 15,

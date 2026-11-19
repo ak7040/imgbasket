@@ -193,7 +193,8 @@ function recent_gallery_html(int $limit = 12): string
         $thumb = $f['mime'] === 'image/gif' ? raw_path($f) : '/t/' . $f['share_token'] . '.webp';
         $dims = $f['width'] ? ' width="' . (int) $f['width'] . '" height="' . (int) $f['height'] . '"' : '';
         $cols[$i++ % 3][] = '<a class="card" href="' . esc(public_url() . '/s/' . $f['share_token']) . '" style="' . $ratio . '">'
-            . '<img class="loaded" src="' . esc($thumb) . '" alt="' . esc($f['name']) . '"' . $dims . ' loading="lazy" decoding="async">'
+            . '<img class="loaded" src="' . esc($thumb) . '" alt="' . esc($f['name']) . '"' . $dims
+            . ' loading="lazy" decoding="async" onerror="this.closest(\'.card\').remove()">'
             . '<div class="shade"><div class="name">' . esc($f['name']) . '</div>'
             . '<div class="meta">' . esc(format_size($f['size'])) . ' · '
             . esc(gmdate('M j, Y', strtotime($f['created_at'] . ' UTC'))) . '</div></div></a>';

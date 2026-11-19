@@ -195,11 +195,19 @@ function admin_delete_file(string $id): never
 function admin_file_content(string $id, string $what): never
 {
     $file = find_file_or_404($id);
-    if ($what === 'thumb') {
-        // Small preview for gallery tiles; falls back to the original when none can be made
-        send_thumbnail($file, 'grid', admin_base() . "api/files/{$file['id']}/raw");
+    try {
+        if ($what === 'thumb') {
+            // Small preview for gallery tiles; falls back to the original when none can be made
+            send_thumbnail($file, 'grid', admin_base() . "api/files/{$file['id']}/raw");
+        }
+        send_file($file, $what === 'raw', 'private, max-age=86400');
+    } catch (TelegramGone $e) {
+        // Deleted in the Telegram app: remove the stale record so the drive stops listing it
+        discard_file($file);
+        if (headers_sent()) exit;
+        header_remove();
+        json_out(['error' => 'This file was deleted in Telegram, so its record was removed.'], 404);
     }
-    send_file($file, $what === 'raw', 'private, max-age=86400');
 }
 
 // Create (or return the existing) public link for a file

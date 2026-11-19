@@ -286,6 +286,12 @@ const gallery = {
           const { naturalWidth: w, naturalHeight: h } = e.target;
           if (w && h) e.target.parentElement.style.aspectRatio = `${w} / ${h}`;
         },
+        // The file was removed in Telegram (the site cleans the row up on this request): drop the
+        // tile rather than leaving a blank card in the grid
+        onerror: () => {
+          gallery.items = gallery.items.filter((x) => x !== item);
+          gallery.layout();
+        },
       }),
       el('div', { class: 'shade' },
         el('div', { class: 'name', textContent: item.name }),
