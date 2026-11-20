@@ -50,6 +50,21 @@ function common_head(): string
     ]));
 }
 
+// Google Analytics 4 tag. Public pages only (the admin is a separate document, and share pages keep
+// it too). Left off over plain http so local dev and previews don't land in the live property.
+// Override the ID with 'ga_measurement_id' in config.php; the default is the live ImgBasket property.
+function analytics_head(): string
+{
+    $id = trim((string) config('ga_measurement_id', ''));
+    if ($id === '') $id = 'G-V97J27GZ7T';
+    if (!preg_match('/^G-[A-Z0-9]{4,20}$/', $id) || !str_starts_with(public_url(), 'https://')) return '';
+    $src = 'https://www.googletagmanager.com/gtag/js?id=' . rawurlencode($id);
+    return <<<HTML
+  <script async src="$src"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','$id');</script>
+  HTML;
+}
+
 function site_footer(): string
 {
     $site = esc(site_name());
@@ -254,6 +269,7 @@ function layout(array $o): string
     $canonical = isset($o['canonical']) ? '<link rel="canonical" href="' . esc($o['canonical']) . '">' : '';
     $robots = isset($o['robots']) ? '<meta name="robots" content="' . esc($o['robots']) . '">' : '';
     $common = common_head();
+    $analytics = analytics_head();
     $head = $o['head'] ?? '';
     $body = $o['body'];
     $script = $o['script'] ?? '';
@@ -273,6 +289,7 @@ function layout(array $o): string
   $common
   <link rel="stylesheet" href="$css">
   $head
+$analytics
 </head>
 <body>
   <header class="site-header">
@@ -534,7 +551,8 @@ HTML;
         $title = 'Privacy Policy';
         $description = "What $site stores about you when you upload or view images and videos.";
         $content = <<<HTML
-<p>$site doesn't use accounts, advertising trackers or analytics cookies.</p>
+<p>$site doesn't use accounts or advertising trackers. We use Google Analytics to count visits and see
+which pages and links people use, as described below.</p>
 <h2>What we store when you upload</h2>
 <p>The file itself, its file name, size, dimensions and (for videos) duration, the upload time, its
 delete-after setting and your IP address. The IP address is used to prevent abuse (upload limits) and
@@ -543,10 +561,14 @@ to handle reports.</p>
 <p>Files are stored with Telegram, which we use as storage. Telegram processes the files under its own
 privacy policy.</p>
 <h2>Cookies</h2>
-<p>Visitors get no cookies, and the uploader doesn't store a preference in your browser. The site
-administrator uses one sign-in cookie for the admin area.</p>
+<p>Google Analytics sets cookies (named <code>_ga</code> and <code>_ga_&lt;id&gt;</code>) to recognise
+returning browsers; they expire after up to two years. The uploader doesn't store a preference in your
+browser, and the site administrator uses one sign-in cookie for the admin area. Most browsers let you
+block or delete cookies in their settings.</p>
 <h2>Third parties</h2>
-<p>Pages load the Inter font from Google Fonts, which receives your IP address when the font loads.</p>
+<p>Pages load the Inter font from Google Fonts, and the Google Analytics script from Google Tag Manager.
+Both receive your IP address, and Google Analytics also records the page you view, the site that
+referred you, and basic device and browser details. Google processes this under its own privacy policy.</p>
 <h2>Removal and questions</h2>
 <p>To have a file removed or to ask about your data, email $contact with the file's link.</p>
 HTML;

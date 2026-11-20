@@ -14,6 +14,10 @@ return [
     // Optional: the code from Google Search Console's "HTML tag" verification method
     'google_site_verification' => '',
 
+    // Optional: Google Analytics 4 measurement ID, e.g. 'G-V97J27GZ7T'. The tag is only printed
+    // when public_url is https, so local copies stay out of the live reports.
+    'ga_measurement_id' => '',
+
     // Your site's address, without a trailing slash. Used in share links and link previews.
     'public_url' => 'https://imgbasket.com',
 
