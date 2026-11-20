@@ -29,10 +29,23 @@ function is_image(array $file): bool
     return str_starts_with((string) $file['mime'], 'image/');
 }
 
+function is_video(array $file): bool
+{
+    return str_starts_with((string) $file['mime'], 'video/');
+}
+
+// Media the public site can show inline (images and videos)
+function is_media(array $file): bool
+{
+    return is_image($file) || is_video($file);
+}
+
 // Uploads a file to Telegram (in pieces if needed) and records it. $fields: name, mime, folder_id,
-// source, in_gallery, share_token, uploader_ip, width, height
+// source, in_gallery, share_token, uploader_ip, width, height, duration
 function store_file(string $tmpPath, array $fields): array
 {
+    // A large video can take longer to send than PHP's normal time limit
+    @set_time_limit(0);
     $size = filesize($tmpPath);
     $partSize = tg_part_size();
     $total = max(1, (int) ceil($size / $partSize));
@@ -56,12 +69,12 @@ function store_file(string $tmpPath, array $fields): array
     $pdo->beginTransaction();
     try {
         q_exec(
-            'INSERT INTO files (name, folder_id, size, mime, source, in_gallery, share_token, uploader_ip, width, height)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO files (name, folder_id, size, mime, source, in_gallery, share_token, uploader_ip, width, height, duration)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $fields['name'], $fields['folder_id'] ?? null, $size, $fields['mime'], $fields['source'],
                 !empty($fields['in_gallery']) ? 1 : 0, $fields['share_token'] ?? null, $fields['uploader_ip'] ?? null,
-                $fields['width'] ?? null, $fields['height'] ?? null,
+                $fields['width'] ?? null, $fields['height'] ?? null, $fields['duration'] ?? null,
             ]
         );
         $id = (int) $pdo->lastInsertId();
@@ -145,10 +158,14 @@ function send_file(array $file, bool $inline, string $cacheControl): never
 
     $name = $file['name'];
     $fallback = preg_replace('/[^\x20-\x7e]|["\\\\]/', '_', $name);
-    header('Content-Type: ' . ($file['mime'] ?: 'application/octet-stream'));
+    $type = $file['mime'] ?: 'application/octet-stream';
+    header('Content-Type: ' . $type);
     header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . "; filename=\"$fallback\"; filename*=UTF-8''" . rawurlencode($name));
-    // Uploaded HTML/SVG must not run scripts on this site
-    header('Content-Security-Policy: sandbox');
+    // Uploaded HTML/SVG must not run scripts on this site. Video and audio are media, not documents,
+    // and a sandbox policy on them can upset some browsers' players, so they keep their response as is.
+    if (!str_starts_with($type, 'video/') && !str_starts_with($type, 'audio/')) {
+        header('Content-Security-Policy: sandbox');
+    }
     header('X-Content-Type-Options: nosniff');
     header("Cache-Control: $cacheControl");
     header('Accept-Ranges: ' . ($single ? 'bytes' : 'none'));

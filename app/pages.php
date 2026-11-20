@@ -30,7 +30,7 @@ function contact_email(): string
 
 function site_description(): string
 {
-    return (string) config('site_description', 'Free image hosting: upload images and get shareable links in seconds.');
+    return (string) config('site_description', 'Free image and video hosting: upload a file and get shareable links in seconds.');
 }
 
 // Tags every public page shares: icons, theme, fonts, Search Console verification
@@ -69,7 +69,7 @@ function site_footer(): string
         <a href="/privacy">Privacy</a>
         $contact
       </nav>
-      <p class="footer-note">© $year $site · Free image hosting, unlimited uploads</p>
+      <p class="footer-note">© $year $site · Free image and video hosting, unlimited uploads</p>
     </div>
   </footer>
 HTML;
@@ -191,7 +191,7 @@ function home_page(): string
                 'name' => site_name(),
                 'url' => "$url/",
                 'logo' => "$url/icon-512.png",
-                'description' => 'Free image hosting with unlimited uploads and no account required.',
+                'description' => 'Free image and video hosting with unlimited uploads and no account required.',
             ] + (contact_email() !== '' ? ['email' => contact_email()] : []),
             [
                 '@type' => 'WebApplication',
@@ -202,9 +202,9 @@ function home_page(): string
                 'browserRequirements' => 'Requires a modern browser with JavaScript enabled.',
                 'isAccessibleForFree' => true,
                 'featureList' => [
-                    'Image upload without an account',
-                    'Direct image links, Markdown, HTML and BBCode',
-                    'Uploads up to ' . format_size(public_max_upload()) . ' per image',
+                    'Image and video upload without an account',
+                    'Direct file links, Markdown, HTML and BBCode',
+                    'Uploads up to ' . format_size(public_max_upload()) . ' per file',
                 ],
                 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
             ],
@@ -280,7 +280,7 @@ const PAGE_SCRIPT = <<<'JS'
 JS;
 
 // $og: ['url', 'width', 'height'] of the link-preview thumbnail, or null
-function image_page(array $file, string $pageUrl, string $directUrl, string $rawPath, ?array $og): string
+function media_page(array $file, string $pageUrl, string $directUrl, string $rawPath, ?array $og): string
 {
     $kind = kind_of($file['mime']);
     $site = site_name();
@@ -288,6 +288,7 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
     $date = gmdate('M j, Y', $uploaded);
     $ext = strtoupper(preg_match('/\.([a-z0-9]{1,6})$/i', $file['name'], $m) ? $m[1] : 'file');
     $dims = $file['width'] && $file['height'] ? " · {$file['width']} × {$file['height']}" : '';
+    $length = $kind === 'video' && $file['duration'] ? ' · ' . format_duration((int) $file['duration']) : '';
     $size = format_size($file['size']);
     // A readable title from the file name: "summer-trip_01.jpg" -> "summer trip 01"
     $label = trim(preg_replace('/[_\-.]+/', ' ', pathinfo($file['name'], PATHINFO_FILENAME))) ?: $file['name'];
@@ -297,62 +298,88 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
         ucfirst($label), $file['width'] ? " – {$file['width']}×{$file['height']}" : '', $kindWord, $size, $site
     );
 
+    $poster = $og['url'] ?? null;
+    $playableVideo = $kind === 'video' && video_playable_mime((string) $file['mime']);
     $media = match ($kind) {
         'image' => '<img src="' . esc($rawPath) . '" alt="' . esc($label) . '"'
             . ($file['width'] ? " width=\"{$file['width']}\" height=\"{$file['height']}\"" : '') . ' fetchpriority="high">',
-        'video' => '<video src="' . esc($rawPath) . '" controls playsinline preload="metadata"></video>',
+        'video' => $playableVideo
+            ? '<video src="' . esc($rawPath) . '" controls playsinline preload="metadata"'
+                . ($poster ? ' poster="' . esc($poster) . '"' : '') . '>'
+                . 'Your browser cannot play this video. <a href="' . esc($rawPath) . '?download=1">Download it</a>.'
+                . '</video>'
+            : '<div class="file-icon"><div class="ext">' . esc($ext) . '</div><div>No preview available for this video</div>'
+                . '<p><a class="btn primary" href="' . esc($rawPath) . '?download=1">Download</a></p></div>',
         'audio' => '<audio src="' . esc($rawPath) . '" controls preload="metadata"></audio>',
         default => '<div class="file-icon"><div class="ext">' . esc($ext) . '</div><div>No preview available</div></div>',
     };
 
     $name = preg_replace('/[\[\]<>"]/', '', $file['name']);
-    $formats = $kind === 'image'
-        ? [
+    $formats = match ($kind) {
+        'image' => [
             ['Link', $pageUrl],
             ['Direct', $directUrl],
             ['Markdown', "![$name]($directUrl)"],
             ['HTML', "<img src=\"$directUrl\" alt=\"$name\">"],
             ['BBCode', "[img]{$directUrl}[/img]"],
-        ]
-        : [
+        ],
+        'video' => [
+            ['Link', $pageUrl],
+            ['Direct', $directUrl],
+            ['Markdown', "[$name]($directUrl)"],
+            ['HTML', "<video src=\"$directUrl\" controls></video>"],
+            ['BBCode', "[url=$pageUrl]{$name}[/url]"],
+        ],
+        default => [
             ['Link', $pageUrl],
             ['Direct', $directUrl],
             ['Markdown', "[$name]($pageUrl)"],
             ['HTML', "<a href=\"$pageUrl\">$name</a>"],
-        ];
+        ],
+    };
 
-    // Link previews (WhatsApp, Telegram, Discord, X, Facebook...) use a small JPEG, because
-    // several apps skip images that are too large. Without one, fall back to the original.
-    $preview = $og['url'] ?? ($kind === 'image' ? $directUrl : null);
+    // Link previews (WhatsApp, Telegram, Discord, X, Facebook...) need an image. Use the stored
+    // preview; an image can fall back to its original, a video to the site's own share image.
+    $imageOg = $og
+        ? ['url' => $og['url'], 'type' => 'image/jpeg', 'width' => $og['width'], 'height' => $og['height']]
+        : ($kind === 'image'
+            ? ['url' => $directUrl, 'type' => $file['mime'] ?: 'image/jpeg', 'width' => $file['width'], 'height' => $file['height']]
+            : ['url' => public_url() . '/og-image.png', 'type' => 'image/png', 'width' => 1200, 'height' => 630]);
+    $preview = $imageOg['url'];
     $head = array_filter([
         '<meta property="og:site_name" content="' . esc($site) . '">',
         '<meta property="og:title" content="' . esc($file['name']) . '">',
         '<meta property="og:description" content="' . esc($description) . '">',
-        '<meta property="og:type" content="website">',
+        '<meta property="og:type" content="' . ($kind === 'video' ? 'video.other' : 'website') . '">',
         '<meta property="og:url" content="' . esc($pageUrl) . '">',
         $preview ? '<meta property="og:image" content="' . esc($preview) . '">' : null,
         $preview && str_starts_with($preview, 'https:') ? '<meta property="og:image:secure_url" content="' . esc($preview) . '">' : null,
-        $og ? '<meta property="og:image:type" content="image/jpeg">' : null,
-        $og ? '<meta property="og:image:width" content="' . (int) $og['width'] . '">' : null,
-        $og ? '<meta property="og:image:height" content="' . (int) $og['height'] . '">' : null,
+        $preview ? '<meta property="og:image:type" content="' . esc($imageOg['type']) . '">' : null,
+        $imageOg['width'] ? '<meta property="og:image:width" content="' . (int) $imageOg['width'] . '">' : null,
+        $imageOg['height'] ? '<meta property="og:image:height" content="' . (int) $imageOg['height'] . '">' : null,
         $preview ? '<meta property="og:image:alt" content="' . esc($label) . '">' : null,
         '<meta name="twitter:card" content="' . ($preview ? 'summary_large_image' : 'summary') . '">',
         '<meta name="twitter:title" content="' . esc($file['name']) . '">',
         '<meta name="twitter:description" content="' . esc($description) . '">',
         $preview ? '<meta name="twitter:image" content="' . esc($preview) . '">' : null,
         $kind === 'video' ? '<meta property="og:video" content="' . esc($directUrl) . '">' : null,
-        $kind === 'image' ? json_ld(array_filter([
+        $kind === 'video' && str_starts_with($directUrl, 'https:') ? '<meta property="og:video:secure_url" content="' . esc($directUrl) . '">' : null,
+        $kind === 'video' ? '<meta property="og:video:type" content="' . esc($file['mime']) . '">' : null,
+        $kind === 'video' && $file['width'] ? '<meta property="og:video:width" content="' . (int) $file['width'] . '">' : null,
+        $kind === 'video' && $file['height'] ? '<meta property="og:video:height" content="' . (int) $file['height'] . '">' : null,
+        in_array($kind, ['image', 'video'], true) ? json_ld(array_filter([
             '@context' => 'https://schema.org',
-            '@type' => 'ImageObject',
+            '@type' => $kind === 'video' ? 'VideoObject' : 'ImageObject',
             'name' => $label,
             'description' => $description,
             'contentUrl' => $directUrl,
-            'thumbnailUrl' => $og['url'] ?? null,
+            'thumbnailUrl' => $og['url'] ?? ($kind === 'image' ? null : $preview),
             'url' => $pageUrl,
             'encodingFormat' => $file['mime'],
             'width' => $file['width'],
             'height' => $file['height'],
-            'contentSize' => $size,
+            'duration' => $kind === 'video' && $file['duration'] ? iso_duration((int) $file['duration']) : null,
+            'contentSize' => $kind === 'image' ? $size : null,
             'uploadDate' => gmdate('c', $uploaded),
             'isPartOf' => ['@id' => public_url() . '/#website'],
         ], fn($v) => $v !== null)) : null,
@@ -373,10 +400,17 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
     }
 
     $title = esc($file['name']);
-    $meta = esc("$size$dims · $date");
+    $meta = esc("$size$dims$length · $date");
     $pageAttr = esc($pageUrl);
     $download = esc($rawPath) . '?download=1';
     $first = esc($formats[0][1]);
+    $uploadLabel = $kind === 'video' ? 'Upload your own video' : 'Upload your own image';
+    $pageNote = $kind === 'video'
+        ? "This video is hosted free on $site. <a href=\"/\">Upload your own video</a> to get a direct link in
+      seconds, or read the guide to <a href=\"/image-hosting-for-forums\">hosting files for forums</a>."
+        : "This $kindWord is hosted free on $site. <a href=\"/\">Upload your own image</a> to get a
+      direct link in seconds, or read the guide to
+      <a href=\"/image-hosting-for-forums\">image hosting for forums</a>.";
     $body = <<<HTML
 <main class="viewer-page">
     <div class="stage">$media</div>
@@ -401,20 +435,19 @@ function image_page(array $file, string $pageUrl, string $directUrl, string $raw
       </div>
     </section>
     <div class="page-foot">
-      <a class="btn" href="/"><span data-icon="upload"></span>Upload your own image</a>
+      <a class="btn" href="/"><span data-icon="upload"></span>$uploadLabel</a>
       $report
     </div>
-    <p class="page-note">This image is hosted free on $site. <a href="/">Upload your own image</a> to get a
-      direct link in seconds, or read the guide to
-      <a href="/image-hosting-for-forums">image hosting for forums</a>.</p>
+    <p class="page-note">$pageNote</p>
   </main>
 HTML;
 
+    $titleKind = $kind === 'video' ? 'Free Video Hosting' : 'Free Image Hosting';
     return layout([
-        'title' => "{$file['name']} — Free Image Hosting · $site",
+        'title' => "{$file['name']} — $titleKind · $site",
         'description' => $description,
         'canonical' => $pageUrl,
-        // Only gallery images may appear in search results; unlisted links stay private
+        // Only gallery files may appear in search results; unlisted links stay private
         'robots' => $file['in_gallery'] ? 'index, follow, max-image-preview:large' : 'noindex, nofollow',
         'head' => implode("\n  ", $head),
         'body' => $body,
@@ -448,20 +481,20 @@ function legal_page(string $which): string
 
     if ($which === 'terms') {
         $title = 'Terms of Use';
-        $description = "The rules for uploading and sharing images on $site.";
+        $description = "The rules for uploading and sharing images and videos on $site.";
         $content = <<<HTML
 <p>By uploading to or using $site, you agree to these terms.</p>
 <h2>What you can upload</h2>
-<p>Only upload images you own or have the right to share. You must not upload anything that is illegal,
-including sexual content involving minors, content that infringes someone else's copyright or trademark,
-malware, or content that harasses, threatens or exposes private information about others.</p>
-<h2>Public and unlisted images</h2>
-<p>Images shown in the gallery are public. Unlisted images don't appear in the gallery or in search
+<p>Only upload images and videos you own or have the right to share. You must not upload anything that is
+illegal, including sexual content involving minors, content that infringes someone else's copyright or
+trademark, malware, or content that harasses, threatens or exposes private information about others.</p>
+<h2>Public and unlisted files</h2>
+<p>Files shown in the gallery are public. Unlisted files don't appear in the gallery or in search
 engines, but anyone with the link can open them. Don't upload anything private.</p>
 <h2>Removal</h2>
-<p>We may remove any upload at any time, for any reason, without notice. To report an image or request
-removal of content you own, use the Report link on the image page or email $contact.
-Copyright holders: include the link to the image and proof that you own the content.</p>
+<p>We may remove any upload at any time, for any reason, without notice. To report a file or request
+removal of content you own, use the Report link on the file's page or email $contact.
+Copyright holders: include the link to the file and proof that you own the content.</p>
 <h2>No guarantee</h2>
 <p>$site is provided free and "as is". Uploads can be lost or become unavailable, so keep your own copies.
 We are not responsible for content uploaded by users.</p>
@@ -470,22 +503,23 @@ We are not responsible for content uploaded by users.</p>
 HTML;
     } else {
         $title = 'Privacy Policy';
-        $description = "What $site stores about you when you upload or view images.";
+        $description = "What $site stores about you when you upload or view images and videos.";
         $content = <<<HTML
 <p>$site doesn't use accounts, advertising trackers or analytics cookies.</p>
 <h2>What we store when you upload</h2>
-<p>The image itself, its file name, size and dimensions, the upload time, whether it's public or unlisted,
-and your IP address. The IP address is used to prevent abuse (upload limits) and to handle reports.</p>
-<h2>Where images are stored</h2>
-<p>Images are stored on our server and with Telegram, which we use as storage. Telegram processes the
-files under its own privacy policy.</p>
+<p>The file itself, its file name, size, dimensions and (for videos) duration, the upload time, whether
+it's public or unlisted, and your IP address. The IP address is used to prevent abuse (upload limits)
+and to handle reports.</p>
+<h2>Where files are stored</h2>
+<p>Files are stored with Telegram, which we use as storage. Telegram processes the files under its own
+privacy policy.</p>
 <h2>Cookies</h2>
 <p>Visitors get no cookies. Your browser remembers your "Show in public gallery" choice locally on your
 device. The site administrator uses one sign-in cookie for the admin area.</p>
 <h2>Third parties</h2>
 <p>Pages load the Inter font from Google Fonts, which receives your IP address when the font loads.</p>
 <h2>Removal and questions</h2>
-<p>To have an image removed or to ask about your data, email $contact with the image's link.</p>
+<p>To have a file removed or to ask about your data, email $contact with the file's link.</p>
 HTML;
     }
 

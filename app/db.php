@@ -24,7 +24,7 @@ function db(): PDO
 // Creates the tables on first run, and adds new ones on later versions
 function ensure_schema(PDO $pdo): void
 {
-    $marker = storage_dir('state') . '/schema-v2';
+    $marker = storage_dir('state') . '/schema-v3';
     if (is_file($marker)) return;
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS folders (
@@ -48,6 +48,7 @@ function ensure_schema(PDO $pdo): void
             uploader_ip VARCHAR(45) NULL,
             width INT NULL,
             height INT NULL,
+            duration INT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX (folder_id),
             INDEX gallery (in_gallery, id),
@@ -78,6 +79,16 @@ function ensure_schema(PDO $pdo): void
             PRIMARY KEY (file_id, kind),
             FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Databases created before videos existed have no duration column
+    $hasDuration = $pdo->query("SHOW COLUMNS FROM files LIKE 'duration'")->fetch();
+    if (!$hasDuration) {
+        try {
+            $pdo->exec('ALTER TABLE files ADD COLUMN duration INT NULL AFTER height');
+        } catch (PDOException $e) {
+            // Another request may have added it between the check and the ALTER
+            if (!str_contains($e->getMessage(), 'Duplicate column')) throw $e;
+        }
+    }
     // Rate limiting: public uploads and admin password attempts
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS events (
@@ -124,7 +135,7 @@ function file_row(?array $r): ?array
 {
     if (!$r) return null;
     foreach (['id', 'size', 'in_gallery'] as $k) $r[$k] = (int) $r[$k];
-    foreach (['folder_id', 'width', 'height'] as $k) $r[$k] = $r[$k] === null ? null : (int) $r[$k];
+    foreach (['folder_id', 'width', 'height', 'duration'] as $k) $r[$k] = $r[$k] === null ? null : (int) $r[$k];
     return $r;
 }
 

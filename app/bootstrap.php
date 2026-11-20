@@ -27,6 +27,7 @@ require APP_DIR . '/db.php';
 require APP_DIR . '/telegram.php';
 require APP_DIR . '/storage.php';
 require APP_DIR . '/images.php';
+require APP_DIR . '/videos.php';
 require APP_DIR . '/pages.php';
 require APP_DIR . '/auth.php';
 

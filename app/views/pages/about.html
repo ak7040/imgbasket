@@ -1,24 +1,26 @@
 <main class="content-page">
   <h1>About {{SITE_NAME}}</h1>
-  <p class="lede">{{SITE_NAME}} is a small, independent free image hosting service. It exists to do one
-    thing well: take an image, give you a stable link, and not demand an account in return.</p>
+  <p class="lede">{{SITE_NAME}} is a small, independent free image and video hosting service. It exists
+    to do one thing well: take an image or video, give you a stable link, and not demand an account in
+    return.</p>
 
   <h2>What the site does</h2>
-  <p>Anyone can upload an image from the home page. Each upload produces a page on {{SITE_NAME}} and a
-    direct link to the file, plus Markdown, HTML and BBCode for forums and blogs. Public images appear in
-    the gallery and can be indexed by search engines. Unlisted images are link-only and carry
+  <p>Anyone can upload an image or video from the home page. Each upload produces a page on {{SITE_NAME}}
+    and a direct link to the file, plus Markdown, HTML and BBCode for forums and blogs. Public files
+    appear in the gallery and can be indexed by search engines. Unlisted files are link-only and carry
     <code>noindex</code>.</p>
-  <p>Files are accepted up to {{MAX_UPLOAD}} each, in JPG, PNG, GIF, WebP, AVIF and BMP. There is no
-    storage quota and no account system on the public site. Uploads are rate-limited to 30 per hour from
-    one IP address to keep automated abuse down.</p>
+  <p>Files are accepted up to {{MAX_UPLOAD}} each: JPG, PNG, GIF, WebP, AVIF and BMP images, plus MP4,
+    WebM, MOV, M4V and OGV videos. There is no storage quota and no account system on the public site.
+    Uploads are rate-limited to 30 per hour from one IP address to keep automated abuse down.</p>
 
   <h2>How it works</h2>
   <p>The site runs on PHP with a MySQL database. Uploaded files are stored in Telegram — the messaging
     platform — either in the operator's Saved Messages or in a private channel managed by a bot. Telegram
-    is used as the storage layer; images are served back through {{SITE_NAME}} with the same links either
-    way. A small disk cache keeps recent files fast for visitors.</p>
+    is used as the storage layer; files are served back through {{SITE_NAME}} with the same links either
+    way. Nothing is kept on this server's disk: each view streams the file from Telegram.</p>
   <p>Two preview sizes are generated for each image: a JPEG for chat-app link previews and a WebP for the
-    gallery grid. The direct link always points at the original file, not the preview.</p>
+    gallery grid. Videos get a poster frame in the same two sizes when FFmpeg is available on the server.
+    The direct link always points at the original file, not the preview.</p>
 
   <h2>Who runs it</h2>
   <p>{{SITE_NAME}} is run by an independent operator, not a large company. There is no advertising network,
@@ -32,7 +34,7 @@
   <p>The public site sets no cookies and loads no analytics or advertising scripts. Uploads record the
     uploader's IP address for rate limiting and abuse handling. The full details are in the
     <a href="/privacy">Privacy Policy</a>.</p>
-  <p>Every image page has a Report link. Reports and takedown requests go to
+  <p>Every file page has a Report link. Reports and takedown requests go to
     <a href="mailto:{{CONTACT}}">{{CONTACT}}</a>. We remove illegal content, harassment, private
     information and copyright-infringing material. The <a href="/terms">Terms of Use</a> set out the rules
     uploaders agree to.</p>
@@ -44,5 +46,5 @@
 
   <p class="table-note">Page last reviewed: November 2026.</p>
 
-  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload an image</a></p>
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload an image or video</a></p>
 </main>

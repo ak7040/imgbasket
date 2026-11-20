@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{SITE_NAME}} — Free Image Hosting, Unlimited Uploads, No Sign-Up</title>
+  <title>{{SITE_NAME}} — Free Image &amp; Video Hosting, Unlimited Uploads, No Sign-Up</title>
   <meta name="description" content="{{DESCRIPTION}}">
   <link rel="canonical" href="{{SITE_URL}}/">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -11,15 +11,15 @@
   <meta property="og:site_name" content="{{SITE_NAME}}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{SITE_URL}}/">
-  <meta property="og:title" content="{{SITE_NAME}} — Free Image Hosting, No Account Needed">
+  <meta property="og:title" content="{{SITE_NAME}} — Free Image &amp; Video Hosting, No Account Needed">
   <meta property="og:description" content="{{DESCRIPTION}}">
   <meta property="og:image" content="{{SITE_URL}}/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="{{SITE_NAME}}: free image hosting with unlimited uploads">
+  <meta property="og:image:alt" content="{{SITE_NAME}}: free image and video hosting with unlimited uploads">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{SITE_NAME}} — Free Image Hosting, No Account Needed">
+  <meta name="twitter:title" content="{{SITE_NAME}} — Free Image &amp; Video Hosting, No Account Needed">
   <meta name="twitter:description" content="{{DESCRIPTION}}">
   <meta name="twitter:image" content="{{SITE_URL}}/og-image.png">
   <link rel="stylesheet" href="{{CSS_URL}}">
@@ -32,33 +32,34 @@
   </header>
 
   <main>
-    <section class="hero" id="hero" tabindex="0" role="button" aria-label="Upload images">
+    <section class="hero" id="hero" tabindex="0" role="button" aria-label="Upload images and videos">
       <div class="hero-icon" data-icon="image"></div>
-      <h1>Free image hosting. Share in seconds.</h1>
-      <p>Drop images here, paste from your clipboard, or choose files. No account, unlimited uploads, up to {{MAX_UPLOAD}} per image.</p>
-      <span class="btn primary"><span data-icon="upload"></span>Choose images</span>
+      <h1>Free image and video hosting. Share in seconds.</h1>
+      <p>Drop images or videos here, paste from your clipboard, or choose files. No account, unlimited uploads, up to {{MAX_UPLOAD}} per file.</p>
+      <span class="btn primary"><span data-icon="upload"></span>Choose files</span>
       <p class="hint" id="limits"></p>
     </section>
 
     <div class="results" id="results"></div>
 
     <section class="features" aria-labelledby="unlimited-title">
-      <h2 id="unlimited-title">Unlimited free image hosting, without the catches</h2>
+      <h2 id="unlimited-title">Unlimited free image and video hosting, without the catches</h2>
       <div class="prose">
-        <p>{{SITE_NAME}} is free image hosting built for the way people actually share pictures: a quick
-          upload, a link you can paste anywhere, and no account in the way. There is no storage quota and
-          no limit on how many images you host. Each image can be up to {{MAX_UPLOAD}} — far more than the
+        <p>{{SITE_NAME}} is free image and video hosting built for the way people actually share media: a
+          quick upload, a link you can paste anywhere, and no account in the way. There is no storage quota
+          and no limit on how many files you host. Each file can be up to {{MAX_UPLOAD}} — far more than the
           50 MB Imgur accepts for a still image — and we serve the original file, not a recompressed copy.</p>
-        <p>Every upload gets two links. The <strong>page link</strong> opens the image on {{SITE_NAME}} with
-          copy-ready Markdown, HTML and BBCode. The <strong>direct link</strong> points straight at the file,
-          so it works in forums, Reddit, Discord, a blog, or an <code>&lt;img&gt;</code> tag on your own site.</p>
-        <p>Uploads are public, so an image can appear in image search results once it has been shared.</p>
+        <p>Every upload gets two links. The <strong>page link</strong> opens the image or video on {{SITE_NAME}}
+          with copy-ready Markdown, HTML and BBCode. The <strong>direct link</strong> points straight at the
+          file, so it works in forums, Reddit, Discord, a blog, an <code>&lt;img&gt;</code> or
+          <code>&lt;video&gt;</code> tag on your own site.</p>
+        <p>Uploads are public, so an image or video can appear in search results once it has been shared.</p>
         <ul class="checks">
           <li>No account, no email, no verification</li>
-          <li>Up to {{MAX_UPLOAD}} per image, with the original file kept</li>
+          <li>Up to {{MAX_UPLOAD}} per file, with the original kept</li>
           <li>Direct links, BBCode, Markdown and HTML for forums and blogs</li>
           <li>No ads and no tracking cookies</li>
-          <li>JPG, PNG, GIF, WebP, AVIF and BMP, including animated GIFs</li>
+          <li>JPG, PNG, GIF, WebP, AVIF, BMP and MP4, WebM, MOV videos</li>
         </ul>
       </div>
     </section>
@@ -79,8 +80,8 @@
           </thead>
           <tbody>
             <tr><th scope="row">Account needed to upload</th><td class="own">No</td><td>No</td><td>No</td></tr>
-            <tr><th scope="row">Maximum image size</th><td class="own">{{MAX_UPLOAD}}</td><td>50 MB</td><td>32 MB</td></tr>
-            <tr><th scope="row">Direct image links</th><td class="own">Yes</td><td>Yes</td><td>Yes</td></tr>
+            <tr><th scope="row">Maximum file size</th><td class="own">{{MAX_UPLOAD}}</td><td>50 MB</td><td>32 MB</td></tr>
+            <tr><th scope="row">Direct image and video links</th><td class="own">Yes</td><td>Yes</td><td>Images only</td></tr>
             <tr><th scope="row">BBCode and HTML embeds</th><td class="own">Yes</td><td>Direct link</td><td>Yes</td></tr>
             <tr><th scope="row">Original file kept</th><td class="own">Yes</td><td>Compressed over 1 MB</td><td>Yes</td></tr>
             <tr><th scope="row">Ads</th><td class="own">None</td><td>Yes</td><td>Yes</td></tr>
@@ -130,22 +131,22 @@
         <article class="feature">
           <span class="feature-icon" data-icon="link"></span>
           <h3>Direct links &amp; embeds</h3>
-          <p>Get a page link, a direct image link, and ready-made Markdown, HTML and BBCode for forums, Reddit and blogs.</p>
+          <p>Get a page link, a direct file link, and ready-made Markdown, HTML and BBCode for images and videos.</p>
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="image"></span>
           <h3>Rich link previews</h3>
-          <p>Shared links show the picture in WhatsApp, Telegram, Discord, X and Facebook.</p>
+          <p>Shared links show the picture, or a video poster frame, in WhatsApp, Telegram, Discord, X and Facebook.</p>
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="upload"></span>
-          <h3>Large images welcome</h3>
-          <p>JPG, PNG, GIF, WebP, AVIF and BMP up to {{MAX_UPLOAD}}. Paste screenshots with Ctrl + V.</p>
+          <h3>Large files welcome</h3>
+          <p>JPG, PNG, GIF, WebP, AVIF, BMP and MP4, WebM, MOV videos up to {{MAX_UPLOAD}}. Paste screenshots with Ctrl + V.</p>
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="cloud"></span>
           <h3>Free</h3>
-          <p>Free image hosting with fast, lightweight pages that work on any phone or computer.</p>
+          <p>Free image and video hosting with fast, lightweight pages that work on any phone or computer.</p>
         </article>
       </div>
     </section>
@@ -154,38 +155,40 @@
       <h2 id="faq-title">Frequently asked questions</h2>
       <details>
         <summary>Is {{SITE_NAME}} free?</summary>
-        <p>Yes. Uploading, sharing and viewing images is free, and you don't need an account. There is no
-          storage quota and no charge for hosting or bandwidth.</p>
+        <p>Yes. Uploading, sharing and viewing images and videos is free, and you don't need an account.
+          There is no storage quota and no charge for hosting or bandwidth.</p>
       </details>
       <details>
-        <summary>How many images can I upload?</summary>
-        <p>There is no storage quota and no limit on the number of images. To stop abuse, uploads are
-          rate-limited to 30 images per hour from one IP address. If you hit the limit, try again later.</p>
+        <summary>How many files can I upload?</summary>
+        <p>There is no storage quota and no limit on the number of files. To stop abuse, uploads are
+          rate-limited to 30 files per hour from one IP address. If you hit the limit, try again later.</p>
       </details>
       <details>
-        <summary>How large can an image be?</summary>
-        <p>Up to {{MAX_UPLOAD}} per image, which covers high-resolution photos, screenshots, animated GIFs
-          and design exports. The original file is served — we don't recompress it for the direct link.</p>
+        <summary>How large can a file be?</summary>
+        <p>Up to {{MAX_UPLOAD}} per file, which covers high-resolution photos, screenshots, animated GIFs,
+          design exports and short videos. The original file is served — we don't recompress it for the
+          direct link.</p>
       </details>
       <details>
-        <summary>Can I hotlink images on my website?</summary>
-        <p>Yes. Upload the image, copy the <strong>direct link</strong>, and use it in an
-          <code>&lt;img&gt;</code> tag, a CSS background or anywhere else that accepts an image URL.
-          Forums and message boards usually want the BBCode tab instead.</p>
+        <summary>Can I hotlink images and videos on my website?</summary>
+        <p>Yes. Upload the file, copy the <strong>direct link</strong>, and use it in an
+          <code>&lt;img&gt;</code> or <code>&lt;video&gt;</code> tag, a CSS background or anywhere else that
+          accepts a media URL. Forums and message boards usually want the BBCode tab instead.</p>
       </details>
       <details>
-        <summary>How do I share an image?</summary>
-        <p>Upload it, then copy one of the links shown under it. The page link opens the image on {{SITE_NAME}};
-          the direct link points at the image file itself.</p>
+        <summary>How do I share an image or video?</summary>
+        <p>Upload it, then copy one of the links shown under it. The page link opens the file on {{SITE_NAME}};
+          the direct link points at the image or video file itself.</p>
       </details>
       <details>
-        <summary>How do I post an image in a forum or on Reddit?</summary>
+        <summary>How do I post an image or video in a forum or on Reddit?</summary>
         <p>After uploading, pick the BBCode tab for most forums, or Markdown for Reddit, GitHub and Discord,
-          then copy and paste it into your post.</p>
+          then copy and paste it into your post. Videos also get a ready-made HTML <code>&lt;video&gt;</code> tag.</p>
       </details>
       <details>
         <summary>Which file types can I upload?</summary>
-        <p>JPG, PNG, GIF (animated too), WebP, AVIF and BMP images, up to {{MAX_UPLOAD}} each.</p>
+        <p>JPG, PNG, GIF (animated too), WebP, AVIF and BMP images, plus MP4, WebM, MOV, M4V and OGV videos,
+          up to {{MAX_UPLOAD}} each.</p>
       </details>
       <details>
         <summary>Is {{SITE_NAME}} an Imgur or ImgBB alternative?</summary>
@@ -194,13 +197,13 @@
           <a href="/imgbb-alternative">ImgBB alternative</a> pages for a side-by-side comparison.</p>
       </details>
       <details>
-        <summary>How long are images kept?</summary>
-        <p>{{SITE_NAME}} is a free service, so we can't guarantee that an image stays online forever. Keep
+        <summary>How long are files kept?</summary>
+        <p>{{SITE_NAME}} is a free service, so we can't guarantee that a file stays online forever. Keep
           your own copy of anything important. See the <a href="/terms">Terms of Use</a> for details.</p>
       </details>
       <details>
-        <summary>How do I get an image removed?</summary>
-        <p>Use the Report link on the image's page or email <a href="mailto:{{CONTACT}}">{{CONTACT}}</a> with the link.</p>
+        <summary>How do I get an image or video removed?</summary>
+        <p>Use the Report link on the file's page or email <a href="mailto:{{CONTACT}}">{{CONTACT}}</a> with the link.</p>
       </details>
     </section>
   </main>
@@ -211,11 +214,11 @@
     <div class="drop-box">
       <span data-icon="upload"></span>
       <h2>Drop to upload</h2>
-      <p class="muted" id="drop-hint">Drop anywhere to upload</p>
+      <p class="muted" id="drop-hint">Drop images or videos anywhere to upload</p>
     </div>
   </div>
   <div class="toasts" id="toasts"></div>
-  <input id="file-input" type="file" accept="image/*" multiple hidden>
+  <input id="file-input" type="file" accept="image/*,video/*" multiple hidden>
 
   <script src="{{ICONS_URL}}"></script>
   <script src="{{QRCODE_URL}}"></script>

@@ -1,7 +1,7 @@
 <?php
 // Recreates the preview images for files uploaded before previews were stored in Telegram.
 // The site also does this lazily the first time a preview is shown; this script does it for every
-// file in one run.
+// file in one run. Video posters need FFmpeg; without it, video files are skipped.
 //
 // On the server, from the site's root:
 //   php scripts/backfill-thumbs.php [--limit=100]
@@ -22,7 +22,7 @@ foreach (array_slice($argv, 1) as $arg) {
 set_time_limit(0);
 
 $rows = q_all(
-    "SELECT * FROM files WHERE mime LIKE 'image/%' ORDER BY id" . ($limit > 0 ? ' LIMIT ' . $limit : '')
+    "SELECT * FROM files WHERE mime LIKE 'image/%' OR mime LIKE 'video/%' ORDER BY id" . ($limit > 0 ? ' LIMIT ' . $limit : '')
 );
 $checked = 0;
 $made = 0;
@@ -31,12 +31,19 @@ $gone = 0;
 
 foreach ($rows as $row) {
     $file = file_row($row);
-    // Same limit as on-demand generation: originals this big aren't downloaded for a preview
-    if ((int) $file['size'] > 200 * 1024 * 1024) {
+    $video = is_video($file);
+    if ($video && !ffmpeg_bin()) {
+        echo "file {$file['id']}: video previews need FFmpeg, skipped\n";
+        continue;
+    }
+    // Same limits as on-demand generation: originals this big aren't downloaded for a preview
+    $max = $video ? 50 * 1024 * 1024 : 200 * 1024 * 1024;
+    if ((int) $file['size'] > $max) {
         echo "file {$file['id']}: too large for a preview, skipped\n";
         continue;
     }
     $missing = array_filter(['og', 'grid'], fn(string $kind): bool => get_thumb($file, $kind) === null);
+
     if (!$missing) continue;
     $checked++;
     try {

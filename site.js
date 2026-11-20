@@ -40,13 +40,21 @@ async function copyText(text) {
 // Link formats offered after an upload
 function shareBox(img) {
   const name = img.name.replace(/[\[\]<>"]/g, '');
-  const formats = [
-    ['Link', img.page_url],
-    ['Direct', img.direct_url],
-    ['Markdown', `![${name}](${img.direct_url})`],
-    ['HTML', `<img src="${img.direct_url}" alt="${name}">`],
-    ['BBCode', `[img]${img.direct_url}[/img]`],
-  ];
+  const formats = img.kind === 'video'
+    ? [
+        ['Link', img.page_url],
+        ['Direct', img.direct_url],
+        ['Markdown', `[${name}](${img.direct_url})`],
+        ['HTML', `<video src="${img.direct_url}" controls></video>`],
+        ['BBCode', `[url=${img.page_url}]${name}[/url]`],
+      ]
+    : [
+        ['Link', img.page_url],
+        ['Direct', img.direct_url],
+        ['Markdown', `![${name}](${img.direct_url})`],
+        ['HTML', `<img src="${img.direct_url}" alt="${name}">`],
+        ['BBCode', `[img]${img.direct_url}[/img]`],
+      ];
   const input = el('input', { readOnly: true, value: formats[0][1], onfocus: (e) => e.target.select() });
   const tabs = el('div', { class: 'tabs' }, formats.map(([label, value], i) =>
     el('button', {
@@ -95,12 +103,12 @@ function qrBox(img) {
   canvas.className = 'qr-code';
   canvas.setAttribute('role', 'img');
   canvas.setAttribute('aria-label', `QR code to download ${img.name}`);
-  const base = img.name.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '-') || 'image';
+  const base = img.name.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '-') || 'file';
   return el('div', { class: 'qr-box' },
     canvas,
     el('div', { class: 'qr-text' },
       el('strong', { textContent: 'Scan to download' }),
-      el('span', { textContent: 'Point your phone camera at the code to save this image.' }),
+      el('span', { textContent: 'Point your phone camera at the code to save this file.' }),
       el('a', { class: 'btn', href: canvas.toDataURL('image/png'), download: `${base}-qr.png` }, icon('download', 16), 'Save QR')));
 }
 
@@ -110,22 +118,44 @@ let config = { maxUpload: 20 * 1024 * 1024 };
 const queue = [];
 let uploading = false;
 
+const IMAGE_EXT = /^(jpe?g|png|gif|webp|avif|bmp)$/;
+const VIDEO_EXT = /^(mp4|webm|mov|m4v|ogv|ogg|mkv|avi|mpg|mpeg|3gp|flv|wmv)$/;
+
+// Image or video, from the browser's type or (when it has none) the file name
+function mediaKind(file) {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('video/')) return 'video';
+  if (file.type === '' || file.type === 'application/octet-stream') {
+    const ext = (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+    if (IMAGE_EXT.test(ext)) return 'image';
+    if (VIDEO_EXT.test(ext)) return 'video';
+  }
+  return null;
+}
+
 function enqueue(fileList) {
   const files = [...fileList];
   for (const file of files) {
     const item = { file };
-    const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    const kind = mediaKind(file);
+    const previewUrl = kind ? URL.createObjectURL(file) : null;
+    const preview = previewUrl && (kind === 'image'
+      ? el('img', { src: previewUrl, alt: '' })
+      : el('video', {
+          src: previewUrl, muted: true, playsInline: true, preload: 'metadata', 'aria-hidden': 'true',
+          onloadedmetadata: (e) => { try { e.target.currentTime = Math.min(0.1, e.target.duration || 0.1); } catch {} },
+        }));
     item.status = el('span', { class: 'status', textContent: 'Waiting…' });
     item.bar = el('div');
     item.body = el('div', { class: 'body' },
       el('div', { class: 'top' }, el('span', { class: 'name', textContent: file.name }), item.status),
       el('div', { class: 'bar' }, item.bar));
     item.node = el('div', { class: 'result' },
-      el('div', { class: 'thumb' }, preview && el('img', { src: preview, alt: '' })),
+      el('div', { class: 'thumb' }, preview, kind === 'video' && el('span', { class: 'thumb-play' }, icon('play', 18))),
       item.body);
     $('#results').prepend(item.node);
 
-    if (!file.type.startsWith('image/')) fail(item, 'Only images can be uploaded');
+    if (!kind) fail(item, 'Only images and videos can be uploaded');
     else if (file.size > config.maxUpload) fail(item, `Too large (max ${formatSize(config.maxUpload)})`);
     else queue.push(item);
   }
@@ -148,7 +178,7 @@ async function processQueue() {
 function upload(item) {
   return new Promise((resolve) => {
     const form = new FormData();
-    form.append('image', item.file);
+    form.append('file', item.file);
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload');
     xhr.upload.onprogress = (e) => {
@@ -234,7 +264,7 @@ fetch('/api/config')
   .then((c) => {
     config = c;
     $('#limits').replaceChildren(
-      `JPG, PNG, GIF, WebP, AVIF · up to ${formatSize(c.maxUpload)} · `,
+      `JPG, PNG, GIF, WebP, AVIF, BMP · MP4, WebM, MOV · up to ${formatSize(c.maxUpload)} · `,
       el('kbd', { textContent: 'Ctrl' }), ' + ', el('kbd', { textContent: 'V' }), ' to paste');
   })
   .catch(() => {});

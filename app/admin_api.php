@@ -117,15 +117,17 @@ function admin_upload(): never
     $created = [];
     foreach ($uploads as $u) {
         if ($problem = upload_problem($u)) json_out(['error' => $problem[1]], $problem[0]);
-        $image = str_starts_with((string) $u['type'], 'image/') ? inspect_image($u['tmp_name']) : null;
-        $mime = $image['mime'] ?? (mime_content_type($u['tmp_name']) ?: $u['type'] ?: 'application/octet-stream');
+        $image = inspect_image($u['tmp_name']);
+        $video = $image ? null : inspect_video($u['tmp_name']);
+        $mime = $image['mime'] ?? $video['mime'] ?? (mime_content_type($u['tmp_name']) ?: $u['type'] ?: 'application/octet-stream');
         $created[] = with_links(store_file($u['tmp_name'], [
             'name' => mb_substr(basename($u['name']), 0, 250) ?: 'file',
             'folder_id' => $folderId,
             'mime' => $mime,
             'source' => 'admin',
-            'width' => $image['width'] ?? null,
-            'height' => $image['height'] ?? null,
+            'width' => $image['width'] ?? $video['width'] ?? null,
+            'height' => $image['height'] ?? $video['height'] ?? null,
+            'duration' => $video['duration'] ?? null,
         ]));
     }
     json_out($created, 201);
@@ -178,7 +180,7 @@ function admin_update_file(string $id): never
         q_exec('UPDATE files SET folder_id = ? WHERE id = ?', [$folderId, $file['id']]);
     }
     if (array_key_exists('inGallery', $body)) {
-        if ($body['inGallery'] && !is_image($file)) json_out(['error' => 'Only images can be shown in the gallery'], 400);
+        if ($body['inGallery'] && !is_media($file)) json_out(['error' => 'Only images and videos can be shown in the gallery'], 400);
         if ($body['inGallery'] && !$file['share_token']) q_exec('UPDATE files SET share_token = ? WHERE id = ?', [new_token(), $file['id']]);
         q_exec('UPDATE files SET in_gallery = ? WHERE id = ?', [$body['inGallery'] ? 1 : 0, $file['id']]);
     }

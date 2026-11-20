@@ -33,25 +33,33 @@ function thumb_spec(string $kind): array
 
 // Returns the stored preview, making it and sending it to Telegram on first use; null if it can't
 // be made. $source is the just-uploaded temp file; without it the original is fetched from Telegram
-// (only for files uploaded before previews were stored there).
+// (only for files uploaded before previews were stored there). Videos get a poster frame from FFmpeg.
 function ensure_thumbnail(array $file, string $kind, ?string $source = null): ?array
 {
     $thumb = get_thumb($file, $kind);
     if ($thumb) return $thumb;
-    if (!is_image($file) || !function_exists('imagecreatetruecolor')) return null;
+
+    $video = is_video($file);
+    if (!$video && !is_image($file)) return null;
+    // Both routes end in GD for the final resize, and videos need FFmpeg for the frame
+    if (!function_exists('imagecreatetruecolor')) return null;
+    if ($video && !ffmpeg_bin()) return null;
 
     $tempSource = null;
     $tempThumb = null;
     try {
         if ($source === null) {
-            // Big originals aren't worth downloading just for a preview
-            if ((int) $file['size'] > 200 * 1024 * 1024 || !storage_ready()) return null;
+            // Big originals aren't worth downloading just for a preview. A video's poster is made
+            // right after upload instead, so on-demand video previews only cover small files.
+            $limit = $video ? 50 * 1024 * 1024 : 200 * 1024 * 1024;
+            if ((int) $file['size'] > $limit || !storage_ready()) return null;
             @set_time_limit(0);
             $tempSource = $source = tempnam(storage_dir('tmp'), 'orig');
             download_to($file, $source);
         }
         $tempThumb = tempnam(storage_dir('tmp'), 'thumb');
-        if (!make_thumbnail($source, $tempThumb, $kind)) return null;
+        $made = $video ? make_video_thumbnail($source, $tempThumb, $kind) : make_thumbnail($source, $tempThumb, $kind);
+        if (!$made) return null;
         clearstatcache(true, $tempThumb);
         $size = (int) filesize($tempThumb);
         $spec = thumb_spec($kind);
@@ -142,7 +150,7 @@ function make_thumbnail(string $source, string $target, string $kind): ?string
 // Builds both previews right after upload, from the uploaded temp file, and stores them in Telegram
 function prepare_thumbnails(array $file, string $source): void
 {
-    if (!is_image($file)) return;
+    if (!is_media($file)) return;
     foreach (['og', 'grid'] as $kind) ensure_thumbnail($file, $kind, $source);
 }
 
@@ -153,6 +161,15 @@ function send_thumbnail(array $file, string $kind, ?string $fallback = null, int
     @set_time_limit(0);
     $thumb = ensure_thumbnail($file, $kind);
     if (!$thumb) {
+        // A video/file preview that couldn't be made must not redirect to the original: an <img>
+        // would get media bytes it can't decode (and would download the whole file doing so).
+        if (!is_image($file)) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo "No preview\n";
+            exit;
+        }
         header('Location: ' . ($fallback ?? raw_path($file)), true, 302);
         exit;
     }
@@ -170,7 +187,14 @@ function send_thumbnail(array $file, string $kind, ?string $fallback = null, int
         q_exec('DELETE FROM thumbs WHERE file_id = ? AND kind = ?', [$file['id'], $kind]);
         header_remove();
         if ($attempt > 0) {
-            // Still gone after rebuilding: let the original's route clean up or serve it
+            // Still gone after rebuilding: let the original's route clean up or serve it. For
+            // video/file previews there is no image to fall back to.
+            if (!is_image($file)) {
+                header('Content-Type: text/plain; charset=utf-8');
+                header('Cache-Control: no-store');
+                echo "No preview\n";
+                exit;
+            }
             header('Location: ' . ($fallback ?? raw_path($file)), true, 302);
             exit;
         }

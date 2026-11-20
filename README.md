@@ -2,12 +2,12 @@
 
 The code behind [imgbasket.com](https://imgbasket.com).
 
-Free image hosting with a private drive, built in PHP + MySQL. Files are stored on Telegram: in your
-own account's **Saved Messages** (default), or in a private channel through a bot.
+Free image and video hosting with a private drive, built in PHP + MySQL. Files are stored on Telegram:
+in your own account's **Saved Messages** (default), or in a private channel through a bot.
 
-- **Public site** (`/`): anyone can upload images, browse the gallery of recent uploads, and get
-  share links (page link, direct link, Markdown, HTML, BBCode). No account needed. Uploads can be
-  public (in the gallery) or unlisted (link only).
+- **Public site** (`/`): anyone can upload images and videos, browse the gallery of recent uploads,
+  and get share links (page link, direct link, Markdown, HTML, BBCode). No account needed. Uploads
+  can be public (in the gallery) or unlisted (link only).
 - **Admin** (`/admin`, password protected): a drive with folders, search, grid/list view, and
   moderation of visitors' uploads, with the uploader's IP address.
 
@@ -19,11 +19,17 @@ own account's **Saved Messages** (default), or in a private channel through a bo
 - **Bot (alternative):** each file goes to a private channel through a bot. Files over 19 MB are split
   into pieces, because bots can only download 20 MB at a time.
 - MySQL stores the folder tree and which messages make up each file and its previews.
-- No image data is kept on the server's disk: every request streams the file from Telegram, so
+- No file data is kept on the server's disk: every request streams the file from Telegram, so
   deleting a file in the admin really removes it everywhere.
 - Images get two small previews made with GD: a JPEG for link previews in chat apps (WhatsApp,
   Telegram, Discord, X…) and a WebP for gallery tiles. The previews are stored in Telegram too, as
   extra messages next to the file (two per image).
+- Videos work the same way. They are stored as **documents**, so Telegram keeps the original bytes
+  without transcoding, and browsers play them through this site. Saved Messages supports HTTP range
+  requests, so a single-message video can be seeked; bot storage splits files over 19 MB and can't
+  seek across pieces. If FFmpeg is installed, a poster frame is extracted at upload time and stored
+  in Telegram like an image preview. Without FFmpeg, videos still upload, play and download — they
+  just have no thumbnail or link-preview image.
 - Deleting files in the Telegram app is detected as well: when a file or preview is requested and
   Telegram says its message is gone, the site removes the stale database row and any remaining
   messages, and returns 404. Deleting through the admin is still cleanest, since it removes
@@ -33,6 +39,8 @@ own account's **Saved Messages** (default), or in a private channel through a bo
 
 - PHP 8.2+ (64-bit) with `curl`, `gd`, `pdo_mysql`, `exif`, `mbstring`, `xml`, `dom`, `openssl`,
   `zlib` and `fileinfo`. All are standard on Hostinger. `gmp` makes Telegram logins faster.
+- Optional: **FFmpeg** (`ffmpeg` and `ffprobe` in `PATH`, or set `ffmpeg_path`) for video poster
+  frames and video metadata. Without it, video uploads still work.
 - For Saved Messages: outgoing connections to Telegram on port 443 and `memory_limit` of 256 MB or
   more. `extras/tg-check.php` checks this on a server; delete it afterwards.
 - MySQL or MariaDB.
@@ -68,9 +76,9 @@ Files stored one way keep working after switching to the other.
 `app/config.php` and `app/storage/` are never in the repository or the zip, so they're kept.
 
 Older versions kept image copies in `app/storage/cache/`; that folder is deleted on the first request
-after upgrading. Preview images for files uploaded before the upgrade are made (and sent to
-Telegram) the first time they are shown. To prepare them all at once, run this from the site's root
-over SSH (or as a one-off cron job):
+after upgrading. Preview images (and video poster frames, when FFmpeg is available) for files
+uploaded before the upgrade are made (and sent to Telegram) the first time they are shown. To
+prepare them all at once, run this from the site's root over SSH (or as a one-off cron job):
 
 ```sh
 php scripts/backfill-thumbs.php
@@ -135,7 +143,8 @@ scripts/dev.sh                            # http://127.0.0.1:8080
 | `storage` | `saved_messages` (default) or `bot` |
 | `telegram.api_id` / `telegram.api_hash` | From my.telegram.org, for Saved Messages |
 | `telegram.bot_token` / `telegram.channel_id` | Your bot and private channel, for bot storage |
-| `public_max_upload` | Max size of visitors' uploads in bytes. `0` means only PHP's limit applies. |
+| `ffmpeg_path` | Optional path to the FFmpeg binary for video posters. Empty means auto-detect. |
+| `public_max_upload` | Max size of visitors' uploads in bytes, images and videos. `0` means only PHP's limit applies. |
 | `public_uploads_per_hour` | Uploads per IP address per hour (default 30) |
 | `ip_header` | Set to `HTTP_X_FORWARDED_FOR` if every upload shows the same IP (a CDN in front) |
 
@@ -148,9 +157,12 @@ public site both show the current limit.
 - `/admin` needs the password. Sign-ins last 30 days in a signed, HttpOnly cookie. Wrong passwords
   are limited to 10 per 15 minutes per IP, and changing the password signs everyone out.
 - `app/` (code, config, stored files) can't be opened from the web.
-- Visitors can only upload real images: JPG, PNG, GIF, WebP, AVIF and BMP, checked by file contents.
-  SVG is rejected because it can contain scripts. Uploaded files are served with a sandbox policy,
-  so they can't run scripts on the site.
+- Visitors can only upload real images and videos, checked by file contents: JPG, PNG, GIF, WebP,
+  AVIF and BMP images, and MP4, WebM, OGG, MOV, M4V, MKV, AVI, MPEG, 3GP, FLV and WMV videos. SVG is
+  rejected because it can contain scripts. Uploaded files are served with a sandbox policy, so they
+  can't run scripts on the site (video and audio responses are exempt so players work normally).
+- When FFmpeg is installed it processes untrusted uploads. Keep it updated; use `ffmpeg_path` to
+  point at a current build, or leave FFmpeg out if you don't want that processing.
 - Uploads are limited per IP address per hour, and every upload records the uploader's IP.
 - Uploads are published immediately. Check **Public uploads** in the admin regularly and delete
   anything that breaks your rules. The content is stored in your Telegram channel.
@@ -166,15 +178,15 @@ public site both show the current limit.
   its own title, description, canonical URL, breadcrumbs and `BreadcrumbList` JSON-LD. These target
   "imgur alternative", "imgbb alternative", "anonymous image hosting" and "image hosting for forums".
   Edit the HTML files to change the copy; no PHP edits are needed.
-- **Image pages** (`/s/<token>`): a descriptive title and description built from the file name,
-  canonical URL, `ImageObject` and `BreadcrumbList` structured data, image alt text, a large image
-  preview for search, and internal links back to the uploader and the forum guide.
+- **File pages** (`/s/<token>`): a descriptive title and description built from the file name,
+  canonical URL, `ImageObject` or `VideoObject` and `BreadcrumbList` structured data, image alt text,
+  a large preview for search, and internal links back to the uploader and the forum guide. Video
+  pages also get `og:video` tags; when FFmpeg made a poster, it is used as the link-preview image.
 - **`/sitemap.xml`:** the home page, the five content pages, legal pages and every **public gallery**
   image, with image tags and titles. `/robots.txt` points to it and keeps `/admin` and `/api/` out of
   search. It still returns the static pages if the database is briefly unavailable.
-- **Crawlable gallery:** the first 12 public images are rendered into the home page HTML as real links
-  (the gallery script then replaces the masonry), so image pages get internal links instead of being
-  reachable only through the sitemap.
+- **Crawlable pages:** every public gallery image or video has an indexable page at `/s/<token>` and
+  is listed in the sitemap, so files are reachable without relying on the home page alone.
 - **Unlisted images stay private:** their pages carry `noindex`, and their files and previews are
   sent with `X-Robots-Tag: noindex`. They never appear in the sitemap. The admin is `noindex` too.
 - **One address:** `www.imgbasket.com` redirects to `imgbasket.com` (the `public_url` host), and a
@@ -212,9 +224,10 @@ page 2–5 for competitive terms such as "free image hosting".
 
 ## Link previews
 
-Each image page has Open Graph tags pointing at a small JPEG preview (`/t/<token>.jpg`, at most
-1200 px), so pasted links show the image in chat apps. Previews only appear once the site is
-reachable on the internet, and apps cache them for a while.
+Each file page has Open Graph tags pointing at a small JPEG preview (`/t/<token>.jpg`, at most
+1200 px), so pasted links show the image, or a video poster frame, in chat apps. Video pages also
+carry `og:video` tags. Previews only appear once the site is reachable on the internet, and apps
+cache them for a while.
 
 ## Project layout
 
@@ -231,6 +244,7 @@ extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
 app/                 PHP code, config, page templates (views/), and storage/ (not web-accessible)
   views/pages/       Copy for the SEO pages (/imgur-alternative, /about, …)
   telegram.php       Storage switch; storage_saved.php (Saved Messages), storage_bot.php (bot)
+  videos.php         Video checks, MP4 metadata, and FFmpeg poster frames
 vendor/              MadelineProto and its libraries (composer.json); blocked from the web
 scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php, indexnow.sh
 ```

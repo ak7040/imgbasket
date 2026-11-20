@@ -120,7 +120,12 @@ function saved_submit_password(string $password): ?string
     }
 }
 
-// Sends one file (or piece of one) to Saved Messages
+// Sends one file (or piece of one) to Saved Messages.
+//
+// Everything goes as a document on purpose, videos included: sendVideo would make Telegram treat it
+// as a playable video message (with streaming metadata and its own preview), while sendDocument keeps
+// the exact original bytes and the file name. This site is the player, so the original is what we
+// want. The mime type is passed explicitly so Telegram stores the right content type.
 function saved_send_part(string $path, string $filename, string $caption, string $mime): array
 {
     $message = saved_api()->sendDocument(

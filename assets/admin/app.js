@@ -37,7 +37,7 @@ function kindOf(file) {
   const mime = file.mime || '';
   const ext = extOf(file.name);
   if (mime.startsWith('image/') || /^(jpe?g|png|gif|webp|avif|bmp|svg|heic)$/.test(ext)) return 'image';
-  if (mime.startsWith('video/') || /^(mp4|webm|mov|mkv|m4v)$/.test(ext)) return 'video';
+  if (mime.startsWith('video/') || /^(mp4|webm|mov|mkv|m4v|ogv|ogg|avi|wmv|flv|3gp|mpg|mpeg)$/.test(ext)) return 'video';
   if (mime.startsWith('audio/') || /^(mp3|wav|ogg|flac|m4a|aac)$/.test(ext)) return 'audio';
   return 'file';
 }
@@ -685,32 +685,34 @@ function openViewer(index) {
 }
 
 function shareFormats(f) {
-  const image = kindOf(f) === 'image';
+  const kind = kindOf(f);
+  const image = kind === 'image';
+  const video = kind === 'video';
   const name = f.name.replace(/[\[\]<>"]/g, '');
   return {
     link: ['Link', f.share_url],
     direct: ['Direct', f.direct_url],
-    markdown: ['Markdown', image ? `![${name}](${f.direct_url})` : `[${name}](${f.share_url})`],
-    html: ['HTML', image ? `<img src="${f.direct_url}" alt="${name}">` : `<a href="${f.share_url}">${name}</a>`],
+    markdown: ['Markdown', image ? `![${name}](${f.direct_url})` : `[${name}](${video ? f.direct_url : f.share_url})`],
+    html: ['HTML', image ? `<img src="${f.direct_url}" alt="${name}">` : video ? `<video src="${f.direct_url}" controls></video>` : `<a href="${f.share_url}">${name}</a>`],
     bbcode: ['BBCode', image ? `[img]${f.direct_url}[/img]` : `[url=${f.share_url}]${name}[/url]`],
   };
 }
 
 function gallerySwitch(f) {
-  const image = kindOf(f) === 'image';
+  const media = ['image', 'video'].includes(kindOf(f));
   const on = Boolean(f.in_gallery);
   return el('div', {
-    class: `toggle-row${image ? '' : ' disabled'}`,
+    class: `toggle-row${media ? '' : ' disabled'}`,
     role: 'switch',
-    tabIndex: image ? 0 : -1,
+    tabIndex: media ? 0 : -1,
     'aria-checked': String(on),
-    onclick: () => image && setInGallery(f, !on),
-    onkeydown: (e) => { if (image && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); setInGallery(f, !on); } },
+    onclick: () => media && setInGallery(f, !on),
+    onkeydown: (e) => { if (media && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); setInGallery(f, !on); } },
   },
     icon('globe', 18),
     el('div', { class: 'text' },
       el('strong', { textContent: 'Public gallery' }),
-      el('span', { class: 'muted xs', textContent: image ? (on ? 'Visible on the public site' : 'Not listed on the public site') : 'Only images can be listed' })),
+      el('span', { class: 'muted xs', textContent: media ? (on ? 'Visible on the public site' : 'Not listed on the public site') : 'Only images and videos can be listed' })),
     el('span', { class: `switch${on ? ' on' : ''}` }));
 }
 

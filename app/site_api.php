@@ -36,18 +36,33 @@ function public_max_upload(): int
 // What the public site is allowed to know about a file
 function public_item(array $file): array
 {
+    $kind = kind_of($file['mime']);
+    if ($file['mime'] === 'image/gif') {
+        // GIFs keep their animation; use the original in the gallery
+        $thumb = raw_path($file);
+    } elseif (is_image($file)) {
+        $thumb = '/t/' . $file['share_token'] . '.webp';
+    } elseif (is_video($file) && get_thumb($file, 'grid')) {
+        // A video only has a tile preview when FFmpeg made one at upload time
+        $thumb = '/t/' . $file['share_token'] . '.webp';
+    } else {
+        $thumb = null;
+    }
+
     return [
         'token' => $file['share_token'],
         'name' => $file['name'],
         'size' => (int) $file['size'],
+        'mime' => $file['mime'],
+        'kind' => $kind,
         'width' => $file['width'],
         'height' => $file['height'],
+        'duration' => $file['duration'],
         'created_at' => $file['created_at'],
         'page_url' => public_url() . '/s/' . $file['share_token'],
         'direct_url' => public_url() . raw_path($file),
         'src' => raw_path($file),
-        // GIFs keep their animation in the gallery; everything else uses the small preview
-        'thumb' => $file['mime'] === 'image/gif' ? raw_path($file) : '/t/' . $file['share_token'] . '.webp',
+        'thumb' => $thumb,
     ];
 }
 
@@ -68,11 +83,11 @@ function site_gallery(): never
 }
 
 // Keeps a readable name, drops paths and control characters, and uses the real extension
-function clean_name(string $original, string $ext): string
+function clean_name(string $original, string $ext, string $fallback = 'image'): string
 {
     $base = preg_replace('/\.[^.]*$/', '', basename(str_replace('\\', '/', $original)));
     $base = mb_substr(trim(preg_replace('/[\x00-\x1f\x7f<>"\\\\\/]/u', '', $base)), 0, 100);
-    return ($base !== '' ? $base : 'image') . ".$ext";
+    return ($base !== '' ? $base : $fallback) . ".$ext";
 }
 
 function site_upload(): never
@@ -86,25 +101,32 @@ function site_upload(): never
         json_out(['error' => "Upload limit reached. Try again in $minutes min."], 429);
     }
 
-    $upload = uploaded_files('image')[0] ?? null;
+    // The current page posts "file"; older clients used "image" (and "video" was never sent)
+    $upload = uploaded_files('file')[0] ?? uploaded_files('image')[0] ?? uploaded_files('video')[0] ?? null;
     if ($problem = upload_problem($upload)) json_out(['error' => $problem[1]], $problem[0]);
     if ($upload['size'] > public_max_upload()) {
-        json_out(['error' => 'Image is larger than ' . format_size(public_max_upload())], 413);
+        json_out(['error' => 'File is larger than ' . format_size(public_max_upload())], 413);
     }
 
-    $image = inspect_image($upload['tmp_name']);
-    if (!$image) json_out(['error' => 'Only JPG, PNG, GIF, WebP, AVIF and BMP images are allowed'], 415);
+    // Checked by content, not by name. Images first because it is the common case.
+    $media = inspect_image($upload['tmp_name']);
+    if (!$media) $media = inspect_video($upload['tmp_name']);
+    if (!$media) {
+        json_out(['error' => 'Only JPG, PNG, GIF, WebP, AVIF and BMP images and MP4, WebM, MOV and other videos are allowed'], 415);
+    }
+    $kind = str_starts_with($media['mime'], 'video/') ? 'video' : 'image';
 
     $file = store_file($upload['tmp_name'], [
-        'name' => clean_name((string) $upload['name'], $image['ext']),
-        'mime' => $image['mime'],
+        'name' => clean_name((string) $upload['name'], $media['ext'], $kind),
+        'mime' => $media['mime'],
         'source' => 'public',
         // Unlisted uploads still get links, they just don't appear in the gallery
         'in_gallery' => ($_POST['public'] ?? '1') !== '0',
         'share_token' => new_token(),
         'uploader_ip' => $ip,
-        'width' => $image['width'],
-        'height' => $image['height'],
+        'width' => $media['width'],
+        'height' => $media['height'],
+        'duration' => $media['duration'] ?? null,
     ]);
     json_out(public_item($file) + ['in_gallery' => (bool) $file['in_gallery']], 201);
 }
@@ -112,9 +134,10 @@ function site_upload(): never
 function site_image_page(string $token): never
 {
     $file = get_file_by_token($token) ?? not_found_page();
-    // Chat apps read og:image from this page for the link preview, so make sure it exists
+    // Chat apps read og:image from this page for the link preview, so make sure it exists. For a
+    // video this is a poster frame; without FFmpeg the page falls back to the site's share image.
     $og = null;
-    if (is_image($file)) {
+    if (is_media($file)) {
         try {
             if ($thumb = ensure_thumbnail($file, 'og')) {
                 $og = ['url' => public_url() . "/t/$token.jpg", 'width' => $thumb['width'], 'height' => $thumb['height']];
@@ -125,7 +148,7 @@ function site_image_page(string $token): never
             not_found_page();
         }
     }
-    html_out(image_page($file, public_url() . "/s/$token", public_url() . raw_path($file), raw_path($file), $og));
+    html_out(media_page($file, public_url() . "/s/$token", public_url() . raw_path($file), raw_path($file), $og));
 }
 
 function site_file(string $token): never
@@ -193,12 +216,12 @@ function site_llms(): never
     $lines = [
         "# $site",
         '',
-        "> Free image hosting with unlimited uploads, no account required. Upload an image and get a",
-        '> page link and a direct image link, plus Markdown, HTML and BBCode. Files up to '
-            . format_size(public_max_upload()) . ' each.',
+        "> Free image and video hosting with unlimited uploads, no account required. Upload an image",
+        '> or video and get a page link and a direct file link, plus Markdown, HTML and BBCode. Files up',
+        '> to ' . format_size(public_max_upload()) . ' each.',
         '',
         '## Pages',
-        "- [Upload an image]($url/): home page and uploader",
+        "- [Upload an image or video]($url/): home page and uploader",
     ];
     foreach (content_meta() as $slug => $meta) {
         $lines[] = "- [{$meta['crumb']}]($url/$slug)";
@@ -207,8 +230,8 @@ function site_llms(): never
     $lines[] = "- [Privacy Policy]($url/privacy)";
     $lines[] = '';
     $lines[] = '## Notes';
-    $lines[] = '- Public gallery images have indexable pages at /s/<token>. Unlisted images are link-only and noindex.';
-    $lines[] = '- Images are served from /i/<token>; previews from /t/<token>.jpg and /t/<token>.webp.';
+    $lines[] = '- Public gallery images and videos have indexable pages at /s/<token>. Unlisted files are link-only and noindex.';
+    $lines[] = '- Images and videos are served from /i/<token>; previews from /t/<token>.jpg and /t/<token>.webp.';
     $lines[] = '- There is no public upload API. Uploads are rate-limited to '
         . (int) config('public_uploads_per_hour', 30) . ' per IP per hour.';
     header('Content-Type: text/plain; charset=utf-8');
@@ -247,15 +270,21 @@ function site_sitemap(): never
         . '</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n";
     // A sitemap holds at most 50,000 URLs
     try {
-        $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND mime LIKE 'image/%' ORDER BY id DESC LIMIT 49000");
+        $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
+                       AND (mime LIKE 'image/%' OR mime LIKE 'video/%') ORDER BY id DESC LIMIT 49000");
     } catch (Throwable $e) {
         $rows = [];
     }
     foreach ($rows as $row) {
         $f = file_row($row);
         $out .= '<url><loc>' . $x("$url/s/{$f['share_token']}") . '</loc><lastmod>' . gmdate('Y-m-d', strtotime($f['created_at'] . ' UTC'))
-            . '</lastmod><image:image><image:loc>' . $x($url . raw_path($f)) . '</image:loc>'
-            . '<image:title>' . $x($f['name']) . '</image:title></image:image></url>' . "\n";
+            . '</lastmod>';
+        // The image sitemap extension only applies to images; video pages are listed as normal URLs
+        if (is_image($f)) {
+            $out .= '<image:image><image:loc>' . $x($url . raw_path($f)) . '</image:loc>'
+                . '<image:title>' . $x($f['name']) . '</image:title></image:image>';
+        }
+        $out .= '</url>' . "\n";
     }
     $out .= '</urlset>' . "\n";
     header('Content-Type: application/xml; charset=utf-8');

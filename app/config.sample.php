@@ -6,7 +6,7 @@ return [
 
     // Used in search results and link previews of the home page. Lead with the main keyword and the
     // things that make the site different (no account, unlimited uploads, size limit).
-    'site_description' => 'Free image hosting with unlimited uploads and no account: upload an image up to 2 GB and get a direct link, HTML or BBCode in seconds.',
+    'site_description' => 'Free image and video hosting with unlimited uploads and no account: upload a file up to 2 GB and get a direct link, HTML or BBCode in seconds.',
 
     // Shown on the Terms, Privacy and Report links, for takedown requests and questions
     'contact_email' => 'support@imgbasket.com',
@@ -53,7 +53,13 @@ return [
         'api_base' => 'https://api.telegram.org',
     ],
 
-    // Visitors' uploads: max size in bytes (0 = only PHP's upload limit) and uploads per IP per hour
+    // Optional: FFmpeg binary used to make video poster images. Leave empty to look for ffmpeg in
+    // PATH and the usual install folders. Without FFmpeg, videos still upload and play; they just
+    // don't get a thumbnail or link-preview image.
+    'ffmpeg_path' => '',
+
+    // Visitors' uploads: max size in bytes for images and videos (0 = only PHP's upload limit),
+    // and uploads per IP per hour
     'public_max_upload' => 0,
     'public_uploads_per_hour' => 30,
 
