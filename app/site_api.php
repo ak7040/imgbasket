@@ -17,7 +17,10 @@ function site_route(string $method, string $path): never
     if ($get && preg_match('#^/([a-z0-9-]+)$#', $path, $m) && in_array($m[1], content_slugs(), true)) {
         html_out(content_page($m[1]));
     }
-    if ($get && $path === '/api/config') json_out(['maxUpload' => public_max_upload()]);
+    if ($get && $path === '/api/config') json_out([
+        'maxUpload' => public_max_upload(),
+        'expiryOptions' => array_map(fn(array $o) => ['value' => $o['value'], 'label' => $o['label']], expiry_options()),
+    ]);
     if ($get && $path === '/api/gallery') site_gallery();
     if ($method === 'POST' && $path === '/api/upload') site_upload();
     if ($get && preg_match('#^/s/([A-Za-z0-9_-]+)$#', $path, $m)) site_image_page($m[1]);
@@ -31,6 +34,61 @@ function public_max_upload(): int
 {
     $own = (int) config('public_max_upload', 0);
     return $own > 0 ? min($own, php_upload_limit()) : php_upload_limit();
+}
+
+// "Delete after" choices on the uploader. The key is what the form posts; the value is the number
+// of seconds, or null for "keep forever". Only these values are accepted, so nobody can pin a file
+// far into the future with a hand-made request.
+const UPLOAD_EXPIRY = [
+    'never' => [null, 'Keep forever'],
+    '1h' => [3600, '1 hour'],
+    '1d' => [86400, '1 day'],
+    '7d' => [604800, '7 days'],
+    '30d' => [2592000, '30 days'],
+    '90d' => [7776000, '90 days'],
+];
+
+function expiry_options(): array
+{
+    $options = [];
+    foreach (UPLOAD_EXPIRY as $value => [$seconds, $label]) {
+        $options[] = ['value' => $value, 'label' => $label, 'seconds' => $seconds];
+    }
+    return $options;
+}
+
+// <option> markup for the home page's range selector, rendered server-side so the choices have one
+// source of truth (UPLOAD_EXPIRY)
+function expiry_options_html(): string
+{
+    $options = [];
+    foreach (expiry_options() as $option) {
+        $options[] = '<option value="' . esc($option['value']) . '"'
+            . ($option['value'] === 'never' ? ' selected' : '') . '>'
+            . esc($option['label']) . '</option>';
+    }
+    return "\n            " . implode("\n            ", $options);
+}
+
+// Turns the posted choice into a UTC datetime for files.expires_at, or null ("keep forever")
+function parse_expiry(?string $choice): ?string
+{
+    $seconds = UPLOAD_EXPIRY[(string) $choice][0] ?? null;
+    return $seconds === null ? null : gmdate('Y-m-d H:i:s', time() + $seconds);
+}
+
+// The shared token lookup for public pages: expired files are removed and reported as gone
+function site_media_or_404(string $token): array
+{
+    $file = get_file_by_token($token) ?? not_found_page();
+    if (file_is_expired($file)) {
+        discard_file($file);
+        html_out(message_page(
+            'Link expired',
+            'This file was set to delete itself automatically and is no longer available.'
+        ), 410);
+    }
+    return $file;
 }
 
 // What the public site is allowed to know about a file
@@ -59,6 +117,7 @@ function public_item(array $file): array
         'height' => $file['height'],
         'duration' => $file['duration'],
         'created_at' => $file['created_at'],
+        'expires_at' => $file['expires_at'] ?? null,
         'page_url' => public_url() . '/s/' . $file['share_token'],
         'direct_url' => public_url() . raw_path($file),
         'src' => raw_path($file),
@@ -68,11 +127,15 @@ function public_item(array $file): array
 
 function site_gallery(): never
 {
+    maybe_purge_expired();
     $limit = 30;
     $before = (int) ($_GET['before'] ?? 0) ?: PHP_INT_MAX;
-    // One extra row tells us whether there's another page
+    // One extra row tells us whether there's another page. Expired files leave the gallery even if
+    // the Telegram messages haven't been deleted yet.
     $rows = array_map('file_row', q_all(
-        'SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND id < ? ORDER BY id DESC LIMIT ' . ($limit + 1),
+        'SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
+         AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())
+         AND id < ? ORDER BY id DESC LIMIT ' . ($limit + 1),
         [$before]
     ));
     $page = array_slice($rows, 0, $limit);
@@ -93,6 +156,9 @@ function clean_name(string $original, string $ext, string $fallback = 'image'): 
 function site_upload(): never
 {
     if (!storage_ready()) json_out(['error' => 'Uploads are paused right now. Try again later.'], 503);
+
+    // Expiring uploads are cleaned on access too; this keeps old ones from piling up in Telegram
+    maybe_purge_expired();
 
     $ip = client_ip();
     $perHour = (int) config('public_uploads_per_hour', 30);
@@ -127,13 +193,14 @@ function site_upload(): never
         'width' => $media['width'],
         'height' => $media['height'],
         'duration' => $media['duration'] ?? null,
+        'expires_at' => parse_expiry(isset($_POST['expires']) ? (string) $_POST['expires'] : null),
     ]);
     json_out(public_item($file) + ['in_gallery' => (bool) $file['in_gallery']], 201);
 }
 
 function site_image_page(string $token): never
 {
-    $file = get_file_by_token($token) ?? not_found_page();
+    $file = site_media_or_404($token);
     // Chat apps read og:image from this page for the link preview, so make sure it exists. For a
     // video this is a poster frame; without FFmpeg the page falls back to the site's share image.
     $og = null;
@@ -153,7 +220,7 @@ function site_image_page(string $token): never
 
 function site_file(string $token): never
 {
-    $file = get_file_by_token($token) ?? not_found_page();
+    $file = site_media_or_404($token);
     keep_unlisted_out_of_search($file);
     if (!storage_ready()) {
         html_out(message_page('Offline', 'This file is unavailable right now. Try again later.'), 503);
@@ -175,6 +242,11 @@ function site_file(string $token): never
 function site_thumbnail(string $token, string $ext): never
 {
     $file = get_file_by_token($token) ?? not_found_page();
+    // A thumbnail request is an <img> load, so expire it without the HTML "link expired" page
+    if (file_is_expired($file)) {
+        discard_file($file);
+        not_found_page();
+    }
     keep_unlisted_out_of_search($file);
     try {
         send_thumbnail($file, $ext === 'jpg' ? 'og' : 'grid');
@@ -232,6 +304,7 @@ function site_llms(): never
     $lines[] = '## Notes';
     $lines[] = '- Public gallery images and videos have indexable pages at /s/<token>. Unlisted files are link-only and noindex.';
     $lines[] = '- Images and videos are served from /i/<token>; previews from /t/<token>.jpg and /t/<token>.webp.';
+    $lines[] = '- An upload can be given a delete-after period (1 hour to 90 days); it then disappears from the gallery, the sitemap and its links.';
     $lines[] = '- There is no public upload API. Uploads are rate-limited to '
         . (int) config('public_uploads_per_hour', 30) . ' per IP per hour.';
     header('Content-Type: text/plain; charset=utf-8');
@@ -247,7 +320,10 @@ function site_sitemap(): never
     $x = fn(string $s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     // If the database is briefly unavailable the static pages should still be listable
     try {
-        $latest = q_one('SELECT MAX(created_at) AS t FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL')['t'] ?? null;
+        $latest = q_one(
+            'SELECT MAX(created_at) AS t FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
+             AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())'
+        )['t'] ?? null;
     } catch (Throwable $e) {
         $latest = null;
     }
@@ -271,6 +347,7 @@ function site_sitemap(): never
     // A sitemap holds at most 50,000 URLs
     try {
         $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
+                       AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())
                        AND (mime LIKE 'image/%' OR mime LIKE 'video/%') ORDER BY id DESC LIMIT 49000");
     } catch (Throwable $e) {
         $rows = [];

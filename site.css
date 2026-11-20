@@ -135,6 +135,42 @@ main { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px 28
 .hero p { margin: 0; color: var(--muted); }
 .hero .btn { margin-top: 14px; }
 .hero .hint { font-size: 13px; color: var(--faint); margin-top: 4px; }
+/* "Delete after" range selector inside the hero */
+.upload-options { margin-top: 10px; cursor: default; }
+.expiry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+.expiry > .icon { color: var(--faint); }
+.expiry select {
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.expiry select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.expiry-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--faint);
+}
 /* "Show in public gallery" switch inside the hero */
 .visibility {
   display: flex;

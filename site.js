@@ -71,7 +71,16 @@ function shareBox(img) {
       input,
       el('button', { class: 'btn primary', title: 'Copy', onclick: () => copyText(input.value) }, icon('copy', 16), 'Copy'),
       el('a', { class: 'btn', href: img.page_url, target: '_blank', rel: 'noopener', title: 'Open' }, icon('external', 16))),
+    expiryNote(img),
     qrBox(img));
+}
+
+// Uploads with a delete-after period say when they will go
+function expiryNote(img) {
+  if (!img.expires_at) return null;
+  const when = new Date(img.expires_at.replace(' ', 'T') + 'Z');
+  const label = when.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  return el('p', { class: 'expiry-note' }, icon('clock', 14), `Deletes itself on ${label}`);
 }
 
 // Draws a QR code for text onto a canvas (black on white, so every scanner can read it)
@@ -135,8 +144,10 @@ function mediaKind(file) {
 
 function enqueue(fileList) {
   const files = [...fileList];
+  // Read the selector once per batch, so changing it later doesn't alter queued uploads
+  const expiry = $('#expiry')?.value || 'never';
   for (const file of files) {
-    const item = { file };
+    const item = { file, expiry };
     const kind = mediaKind(file);
     const previewUrl = kind ? URL.createObjectURL(file) : null;
     const preview = previewUrl && (kind === 'image'
@@ -179,6 +190,7 @@ function upload(item) {
   return new Promise((resolve) => {
     const form = new FormData();
     form.append('file', item.file);
+    form.append('expires', item.expiry || 'never');
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload');
     xhr.upload.onprogress = (e) => {
@@ -218,6 +230,9 @@ $('#file-input').onchange = (e) => {
   e.target.value = '';
 };
 const pick = () => $('#file-input').click();
+// The expiry picker sits inside the hero, which opens the file chooser when clicked
+$('#upload-options').onclick = (e) => e.stopPropagation();
+$('#upload-options').onkeydown = (e) => e.stopPropagation();
 $('#hero').onclick = pick;
 $('#hero').onkeydown = (e) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }

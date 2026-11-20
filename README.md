@@ -34,6 +34,10 @@ in your own account's **Saved Messages** (default), or in a private channel thro
   Telegram says its message is gone, the site removes the stale database row and any remaining
   messages, and returns 404. Deleting through the admin is still cleanest, since it removes
   everything at once.
+- Visitors can set an upload to **delete itself** after 1 hour, 1 day, 7, 30 or 90 days (or keep it
+  forever, the default). The choice is stored in `files.expires_at`; expired files vanish from the
+  gallery and sitemap, their links return 410, and they are deleted from Telegram in small batches
+  from normal traffic. Run `php scripts/purge-expired.php` from cron for prompt cleanup.
 
 ## Requirements
 
@@ -82,6 +86,13 @@ prepare them all at once, run this from the site's root over SSH (or as a one-of
 
 ```sh
 php scripts/backfill-thumbs.php
+```
+
+**Expiring uploads:** expired files are refused on access and removed in small batches from normal
+traffic, so no cron job is required. To delete them promptly (for example every hour), add a cron job:
+
+```sh
+php scripts/purge-expired.php
 ```
 
 ### How Saved Messages works on shared hosting

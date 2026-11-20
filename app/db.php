@@ -24,7 +24,7 @@ function db(): PDO
 // Creates the tables on first run, and adds new ones on later versions
 function ensure_schema(PDO $pdo): void
 {
-    $marker = storage_dir('state') . '/schema-v3';
+    $marker = storage_dir('state') . '/schema-v4';
     if (is_file($marker)) return;
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS folders (
@@ -49,9 +49,12 @@ function ensure_schema(PDO $pdo): void
             width INT NULL,
             height INT NULL,
             duration INT NULL,
+            -- Set when the uploader chose a delete-after period; NULL means keep forever
+            expires_at DATETIME NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX (folder_id),
             INDEX gallery (in_gallery, id),
+            INDEX expires (expires_at),
             FOREIGN KEY (folder_id) REFERENCES folders(id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     // Each file is stored as one or more Telegram messages (bots can only download 20 MB at a time)
@@ -87,6 +90,23 @@ function ensure_schema(PDO $pdo): void
         } catch (PDOException $e) {
             // Another request may have added it between the check and the ALTER
             if (!str_contains($e->getMessage(), 'Duplicate column')) throw $e;
+        }
+    }
+    // Databases created before expiring uploads existed have no expires_at column
+    $hasExpires = $pdo->query("SHOW COLUMNS FROM files LIKE 'expires_at'")->fetch();
+    if (!$hasExpires) {
+        try {
+            $pdo->exec('ALTER TABLE files ADD COLUMN expires_at DATETIME NULL AFTER duration');
+        } catch (PDOException $e) {
+            if (!str_contains($e->getMessage(), 'Duplicate column')) throw $e;
+        }
+    }
+    $hasExpiresIndex = $pdo->query("SHOW INDEX FROM files WHERE Key_name = 'expires'")->fetch();
+    if (!$hasExpiresIndex) {
+        try {
+            $pdo->exec('ALTER TABLE files ADD INDEX expires (expires_at)');
+        } catch (PDOException $e) {
+            if (!str_contains($e->getMessage(), 'Duplicate key name')) throw $e;
         }
     }
     // Rate limiting: public uploads and admin password attempts

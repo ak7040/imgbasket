@@ -37,6 +37,15 @@
       <h1>Free image and video hosting. Share in seconds.</h1>
       <p>Drop images or videos here, paste from your clipboard, or choose files. No account, unlimited uploads, up to {{MAX_UPLOAD}} per file.</p>
       <span class="btn primary"><span data-icon="upload"></span>Choose files</span>
+      <div class="upload-options" id="upload-options" role="group" aria-label="Upload options">
+        <label class="expiry" for="expiry">
+          <span data-icon="clock"></span>
+          <span class="expiry-label">Delete after</span>
+          <select id="expiry" name="expires" aria-label="Delete this file after">
+            {{EXPIRY_OPTIONS}}
+          </select>
+        </label>
+      </div>
       <p class="hint" id="limits"></p>
     </section>
 
@@ -59,6 +68,7 @@
           <li>Up to {{MAX_UPLOAD}} per file, with the original kept</li>
           <li>Direct links, BBCode, Markdown and HTML for forums and blogs</li>
           <li>No ads and no tracking cookies</li>
+          <li>Self-deleting uploads: choose a delete-after time from 1 hour to 90 days</li>
           <li>JPG, PNG, GIF, WebP, AVIF, BMP and MP4, WebM, MOV videos</li>
         </ul>
       </div>
@@ -198,8 +208,11 @@
       </details>
       <details>
         <summary>How long are files kept?</summary>
-        <p>{{SITE_NAME}} is a free service, so we can't guarantee that a file stays online forever. Keep
-          your own copy of anything important. See the <a href="/terms">Terms of Use</a> for details.</p>
+        <p>You choose when you upload: pick <strong>Delete after</strong> in the upload box to remove a
+          file automatically after 1 hour, 1 day, 7, 30 or 90 days, or leave it on
+          <strong>Keep forever</strong>. Otherwise {{SITE_NAME}} is a free service, so we can't guarantee
+          that a file stays online forever. Keep your own copy of anything important. See the
+          <a href="/terms">Terms of Use</a> for details.</p>
       </details>
       <details>
         <summary>How do I get an image or video removed?</summary>

@@ -214,6 +214,7 @@ function home_page(): string
     return render_view('home.html', [
         'JSONLD' => $ld,
         'MAX_UPLOAD' => esc(format_size(public_max_upload())),
+        'EXPIRY_OPTIONS' => expiry_options_html(),
     ]);
 }
 

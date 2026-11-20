@@ -795,6 +795,7 @@ function renderViewer() {
     f.width && ['Dimensions', `${f.width} × ${f.height}`],
     ['Type', f.mime || 'Unknown'],
     ['Uploaded', formatDate(f.created_at, true)],
+    f.expires_at && ['Auto-delete', formatDate(f.expires_at, true)],
     ['Uploaded by', f.source === 'public' ? 'Visitor (public site)' : 'You'],
     f.uploader_ip && ['Uploader IP', f.uploader_ip],
   ].filter(Boolean);

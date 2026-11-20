@@ -41,7 +41,7 @@ function is_media(array $file): bool
 }
 
 // Uploads a file to Telegram (in pieces if needed) and records it. $fields: name, mime, folder_id,
-// source, in_gallery, share_token, uploader_ip, width, height, duration
+// source, in_gallery, share_token, uploader_ip, width, height, duration, expires_at
 function store_file(string $tmpPath, array $fields): array
 {
     // A large video can take longer to send than PHP's normal time limit
@@ -69,12 +69,13 @@ function store_file(string $tmpPath, array $fields): array
     $pdo->beginTransaction();
     try {
         q_exec(
-            'INSERT INTO files (name, folder_id, size, mime, source, in_gallery, share_token, uploader_ip, width, height, duration)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO files (name, folder_id, size, mime, source, in_gallery, share_token, uploader_ip, width, height, duration, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $fields['name'], $fields['folder_id'] ?? null, $size, $fields['mime'], $fields['source'],
                 !empty($fields['in_gallery']) ? 1 : 0, $fields['share_token'] ?? null, $fields['uploader_ip'] ?? null,
                 $fields['width'] ?? null, $fields['height'] ?? null, $fields['duration'] ?? null,
+                $fields['expires_at'] ?? null,
             ]
         );
         $id = (int) $pdo->lastInsertId();
@@ -102,6 +103,45 @@ function delete_file(array $file): void
     q_exec('DELETE FROM files WHERE id = ?', [$file['id']]);
     foreach ($chunks as $chunk) tg_delete_chunk($chunk);
     foreach ($thumbs as $thumb) tg_delete_chunk($thumb);
+}
+
+// True once the uploader's delete-after period has passed
+function file_is_expired(array $file): bool
+{
+    return !empty($file['expires_at']) && strtotime($file['expires_at'] . ' UTC') <= time();
+}
+
+// Deletes up to $limit expired files, bytes and all. Expired files are also refused lazily when
+// someone opens them; this keeps Telegram from holding them until they are next requested.
+function purge_expired_files(int $limit = 50): int
+{
+    $rows = q_all(
+        'SELECT * FROM files WHERE expires_at IS NOT NULL AND expires_at <= UTC_TIMESTAMP()
+         ORDER BY expires_at LIMIT ' . max(1, min(500, $limit))
+    );
+    $removed = 0;
+    foreach ($rows as $row) {
+        $file = file_row($row);
+        try {
+            delete_file($file);
+            $removed++;
+        } catch (Throwable $e) {
+            error_log("Could not purge expired file {$file['id']}: " . $e->getMessage());
+        }
+    }
+    return $removed;
+}
+
+// Runs an occasional small purge from normal traffic, so expiring uploads disappear even when no
+// cron job is set up. Cheap: one indexed query on the requests that take it.
+function maybe_purge_expired(int $chance = 20): void
+{
+    if ($chance < 1 || random_int(1, $chance) !== 1) return;
+    try {
+        purge_expired_files(10);
+    } catch (Throwable $e) {
+        error_log('Expired-file purge failed: ' . $e->getMessage());
+    }
 }
 
 // A file whose messages were deleted in the Telegram app: remove the stale database row and any
