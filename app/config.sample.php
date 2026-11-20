@@ -15,7 +15,8 @@ return [
     'google_site_verification' => '',
 
     // Optional: Google Analytics 4 measurement ID, e.g. 'G-V97J27GZ7T'. The tag is only printed
-    // when public_url is https, so local copies stay out of the live reports.
+    // when public_url is https, so local copies stay out of the live reports. Shared file pages
+    // (/s/…) and the admin never get it.
     'ga_measurement_id' => '',
 
     // Your site's address, without a trailing slash. Used in share links and link previews.

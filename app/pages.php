@@ -33,7 +33,8 @@ function site_description(): string
     return (string) config('site_description', 'Free image and video hosting: upload a file and get shareable links in seconds.');
 }
 
-// Tags every public page shares: icons, theme, fonts, Search Console verification
+// Tags every public page shares: icons, theme, fonts, Analytics, Search Console verification.
+// Both templates use this (home.html directly, the other pages through layout()).
 function common_head(): string
 {
     $verify = (string) config('google_site_verification', '');
@@ -47,17 +48,19 @@ function common_head(): string
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
         '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
         $verify !== '' ? '<meta name="google-site-verification" content="' . esc($verify) . '">' : null,
-    ]));
+    ])) . analytics_head();
 }
 
-// Google Analytics 4 tag. Public pages only (the admin is a separate document, and share pages keep
-// it too). Left off over plain http so local dev and previews don't land in the live property.
+// Google Analytics 4 tag for the public site. Not printed for the admin (a separate document),
+// shared file pages (/s/…), or plain http, so local copies stay out of the live property and the
+// "no tracking cookies on the pages you share" promise stays true.
 // Override the ID with 'ga_measurement_id' in config.php; the default is the live ImgBasket property.
 function analytics_head(): string
 {
     $id = trim((string) config('ga_measurement_id', ''));
     if ($id === '') $id = 'G-V97J27GZ7T';
     if (!preg_match('/^G-[A-Z0-9]{4,20}$/', $id) || !str_starts_with(public_url(), 'https://')) return '';
+    if (str_starts_with((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/s/')) return '';
     $src = 'https://www.googletagmanager.com/gtag/js?id=' . rawurlencode($id);
     return <<<HTML
   <script async src="$src"></script>
@@ -269,7 +272,6 @@ function layout(array $o): string
     $canonical = isset($o['canonical']) ? '<link rel="canonical" href="' . esc($o['canonical']) . '">' : '';
     $robots = isset($o['robots']) ? '<meta name="robots" content="' . esc($o['robots']) . '">' : '';
     $common = common_head();
-    $analytics = analytics_head();
     $head = $o['head'] ?? '';
     $body = $o['body'];
     $script = $o['script'] ?? '';
@@ -289,7 +291,6 @@ function layout(array $o): string
   $common
   <link rel="stylesheet" href="$css">
   $head
-$analytics
 </head>
 <body>
   <header class="site-header">
