@@ -1,0 +1,113 @@
+<main class="content-page">
+  <h1>Private image hosting: link-only, no public gallery</h1>
+  <p class="lede">{{SITE_NAME}} is private by default. There is no public gallery or recent-uploads feed,
+    every upload page is marked <code>noindex</code>, and nothing is added to the sitemap. You upload an
+    image, get a random link, and decide who receives it. No account is involved at any point.</p>
+
+  <h2>What “private” means on {{SITE_NAME}}</h2>
+  <ul class="checks">
+    <li><strong>No public gallery.</strong> There is no page that lists uploads, no “recent images” feed and
+      no profiles to browse. The home page is an uploader, not a community.</li>
+    <li><strong>No search indexing.</strong> File pages send <code>noindex, nofollow</code>, and the
+      sitemap includes only the site's own pages — never your uploads.</li>
+    <li><strong>A random link.</strong> Each upload gets a long, unguessable token, so nobody can find it by
+      trying short or predictable URLs.</li>
+    <li><strong>No account or email.</strong> Nothing ties the file to a profile, because there is no
+      profile. You can upload and share without identifying yourself.</li>
+    <li><strong>Delete after.</strong> Choose 1 hour, 1 day, 7, 30 or 90 days and the link stops working at
+      that time. Useful for screenshots sent to one person.</li>
+    <li><strong>No ad trackers.</strong> No advertising scripts and no analytics cookies on the public
+      site.</li>
+  </ul>
+
+  <h2>What “private” does not mean</h2>
+  <p>Private hosting is easy to misunderstand, so here is the honest version:</p>
+  <ul>
+    <li><strong>It is not password protection.</strong> Anyone with the link can open the file. If you send
+      the link to a group chat, everyone in it can see the image and forward the link.</li>
+    <li><strong>It is not encryption.</strong> The image is stored and served as a normal file. Treat the
+      link like a password and share it only with people you trust.</li>
+    <li><strong>It is not total anonymity.</strong> Each upload records the connection's IP address for
+      rate limiting and abuse reports. There is no account, but the request is not invisible. The
+      <a href="/privacy">Privacy Policy</a> lists exactly what is kept.</li>
+    <li><strong>It is not permanent storage.</strong> There is no automatic deletion on
+      <strong>Keep forever</strong>, but a free service cannot promise that a file stays online forever.
+      Keep your own copy of anything important.</li>
+  </ul>
+
+  <h2>How to upload a private image</h2>
+  <ol>
+    <li>Open <a href="/">the uploader</a>.</li>
+    <li>Drop the image or video, paste it, or choose a file. Files up to {{MAX_UPLOAD}} are accepted.</li>
+    <li>Set <strong>Delete after</strong> if the file is temporary. Otherwise leave it on
+      <strong>Keep forever</strong>.</li>
+    <li>Copy the page link or the direct link. The page link is better for people; the direct link is for
+      websites and apps.</li>
+    <li>Send the link through the channel you already trust — a direct message, an email, a ticket — rather
+      than posting it somewhere public.</li>
+  </ol>
+
+  <h2>Private vs unlisted vs password-protected</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr>
+          <th scope="col"></th>
+          <th scope="col" class="own">{{SITE_NAME}}</th>
+          <th scope="col">Public gallery host</th>
+          <th scope="col">Password-protected host</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Appears in a gallery or feed</th><td class="own">No</td><td>Yes</td><td>No</td></tr>
+        <tr><th scope="row">Can be found in search</th><td class="own">No</td><td>Usually</td><td>No</td></tr>
+        <tr><th scope="row">Anyone with the link can view</th><td class="own">Yes</td><td>Yes</td><td>Only with the password</td></tr>
+        <tr><th scope="row">Account required</th><td class="own">No</td><td>Usually no</td><td>Usually yes</td></tr>
+        <tr><th scope="row">Free</th><td class="own">Yes, no paid tier</td><td>Often ad-supported</td><td>Often limited</td></tr>
+        <tr><th scope="row">Auto-delete</th><td class="own">1 hour – 90 days</td><td>Rarely</td><td>Varies</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">“Unlisted” and “private” are often used interchangeably. On {{SITE_NAME}} they mean
+    the same thing: not listed anywhere, reachable only by its link. Neither is a substitute for password
+    protection if the image is sensitive.</p>
+
+  <h2>When link-only hosting is the right choice</h2>
+  <ul>
+    <li><strong>Client previews and drafts:</strong> send a link, replace the file when the design changes,
+      and use a 7- or 30-day timer.</li>
+    <li><strong>Support screenshots:</strong> share the exact error with one person, then let it expire.</li>
+    <li><strong>Marketplace photos:</strong> a direct link that works in a listing without publishing the
+      image to a public feed.</li>
+    <li><strong>Forum posts:</strong> the direct link still works inside BBCode or an
+      <code>&lt;img&gt;</code> tag; see <a href="/image-hosting-for-forums">image hosting for forums</a>.</li>
+    <li><strong>Personal photos and documents:</strong> keep them out of search results and away from
+      galleries, with a short expiry if they are sensitive.</li>
+  </ul>
+
+  <h2>When you should use something else</h2>
+  <p>If the image must be protected by a password, encrypted at rest, or shared with a team through
+    accounts and permissions, use a service built for that. {{SITE_NAME}} is a free, link-only image host,
+    not a secure vault. For public portfolios or community sharing, a gallery-based host or a photography
+    platform fits better. The <a href="/free-image-hosting">free image hosting guide</a> compares the
+    options honestly.</p>
+
+  <h2>Common questions</h2>
+  <h3>Can Google find my image?</h3>
+  <p>Not through us. Upload pages carry <code>noindex, nofollow</code>, direct files and previews send
+    <code>X-Robots-Tag: noindex</code>, and uploads are never added to the sitemap. If you post the link
+    somewhere public, though, search engines can follow that public page to it.</p>
+  <h3>Can I delete an image after uploading it?</h3>
+  <p>There is no per-file delete button on the public site, because there is no account to attach it to.
+    Set <strong>Delete after</strong> before uploading for anything temporary, or use the Report link on
+    the file's page to ask for removal.</p>
+  <h3>Are uploads encrypted?</h3>
+  <p>Traffic to the site uses HTTPS, so the link and the file are encrypted in transit. Files are stored in
+    Telegram and streamed through the site; they are not end-to-end encrypted with a key that only you
+    hold.</p>
+  <h3>Is there a limit on private uploads?</h3>
+  <p>No storage quota and no paid tier. Uploads are rate-limited to 30 per hour per IP address, and each
+    file can be up to {{MAX_UPLOAD}}.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload a private image</a></p>
+</main>

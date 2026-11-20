@@ -1,0 +1,119 @@
+<main class="content-page">
+  <h1>Temporary image hosting that deletes itself</h1>
+  <p class="lede">Upload an image, choose when it should disappear, and share the link. {{SITE_NAME}} offers
+    delete-after times of 1 hour, 1 day, 7, 30 or 90 days — free, without an account, and without adding
+    the image to a public gallery. When the timer ends, the link stops working.</p>
+
+  <h2>How the delete-after timer works</h2>
+  <p>The <strong>Delete after</strong> selector sits inside the upload box. Pick a time before you add the
+    file, and the choice applies to every file in that upload:</p>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col">Choice</th><th scope="col" class="own">The link works for</th><th scope="col">Good for</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">1 hour</th><td class="own">60 minutes</td><td>One-off screenshots, a code snippet, a quick handoff</td></tr>
+        <tr><th scope="row">1 day</th><td class="own">24 hours</td><td>A support ticket, a draft, a same-day listing</td></tr>
+        <tr><th scope="row">7 days</th><td class="own">One week</td><td>Client previews, temporary forum posts, short projects</td></tr>
+        <tr><th scope="row">30 days</th><td class="own">30 days</td><td>Marketplace listings, monthly reports, event photos</td></tr>
+        <tr><th scope="row">90 days</th><td class="own">90 days</td><td>Longer campaigns and review links</td></tr>
+        <tr><th scope="row">Keep forever</th><td class="own">No automatic expiry</td><td>Reference images, forum signatures, permanent embeds</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Timing starts when the upload finishes, not when the link is first opened. No account is needed to use
+    it, and there is no charge for shorter or longer times.</p>
+
+  <h2>What happens when the timer ends</h2>
+  <ol>
+    <li>The page link and the direct link stop working.</li>
+    <li>The file is removed from storage in routine cleanup, so it is not kept “just in case”.</li>
+    <li>Nothing needs to be done by you. There is no reminder to dismiss and no button to press.</li>
+  </ol>
+  <p>If you copy an image into a chat or a forum post before it expires, the copy stays — the timer removes
+    the file at your link, not the versions other people saved. Treat temporary hosting as a way to limit
+    how long a URL works, not as a recall button.</p>
+
+  <h2>Why use temporary image hosting?</h2>
+  <ul>
+    <li><strong>Reduce what stays online.</strong> A screenshot shared for one task does not need to exist
+      for years.</li>
+    <li><strong>Keep a client review tidy.</strong> Send a preview with a 7-day timer and upload a fresh
+      version when the design changes.</li>
+    <li><strong>Fill in a listing.</strong> Marketplace photos can live for 30 days, matching the life of
+      the listing.</li>
+    <li><strong>Avoid dead links in old threads.</strong> For permanent forum posts, choose
+      <strong>Keep forever</strong> instead — a timer would break the image later.</li>
+    <li><strong>Stay out of galleries.</strong> Temporary uploads are link-only and <code>noindex</code>,
+      like every other upload on {{SITE_NAME}}.</li>
+  </ul>
+
+  <h2>How to upload a temporary image</h2>
+  <ol>
+    <li>Open <a href="/">the uploader</a>.</li>
+    <li>Choose a time in <strong>Delete after</strong> — for example, <strong>1 day</strong>.</li>
+    <li>Drop, paste or choose the image or video. Files up to {{MAX_UPLOAD}} are accepted.</li>
+    <li>Copy the page link or the direct link and share it. The timer is already running.</li>
+  </ol>
+  <p>If you forget to set a timer, the upload stays on <strong>Keep forever</strong>. There is no way to add
+    an expiry to a file afterwards, so choose the time before uploading if it matters.</p>
+
+  <h2>Temporary image hosting without an account</h2>
+  <p>Many temporary image hosts ask you to sign in before they will keep a link alive, or shorten
+    anonymous links to a few days. {{SITE_NAME}} is different: there is no account at any point, the
+    delete-after timer is available to everyone, and the rest of the service is free as well. You can
+    upload a file and choose a 90-day link without giving an email address, and you can choose a 1-hour
+    link without creating a profile you will never use again.</p>
+  <p>It is also <strong>not</strong> a public feed. Temporary uploads are link-only and marked
+    <code>noindex</code>, so they do not appear in a gallery, in Google Images or in the sitemap. The only
+    way to reach one is the link you share. If you need that link to stay out of search entirely, don't
+    post it on a public page; see <a href="/private-image-hosting">private image hosting</a>.</p>
+
+  <h2>What temporary hosting does not do</h2>
+  <ul>
+    <li><strong>It does not recall copies.</strong> If someone downloaded, screenshotted or embedded the
+      image while the link worked, deleting the original does not remove their copy.</li>
+    <li><strong>It does not add a password.</strong> The link is the only access control. Anyone with it
+      can view the file until the timer ends.</li>
+    <li><strong>It cannot be extended.</strong> Choose the time carefully; there is no edit or cancel
+      button after the upload.</li>
+    <li><strong>It is not a permanent archive.</strong> For a forum signature or a long-lived listing,
+      use <strong>Keep forever</strong> instead.</li>
+  </ul>
+
+  <h2>Temporary vs permanent uploads</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col"></th><th scope="col" class="own">Delete after</th><th scope="col">Keep forever</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Link expiry</th><td class="own">1 hour – 90 days</td><td>No automatic expiry</td></tr>
+        <tr><th scope="row">Best for</th><td class="own">Screenshots, drafts, tickets, short listings</td><td>Forum posts, signatures, reference images</td></tr>
+        <tr><th scope="row">Can be changed later</th><td class="own">No</td><td>No</td></tr>
+        <tr><th scope="row">Cost</th><td class="own">Free</td><td>Free</td></tr>
+        <tr><th scope="row">Account needed</th><td class="own">No</td><td>No</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Common questions</h2>
+  <h3>Can I make an image delete after one view?</h3>
+  <p>No. {{SITE_NAME}} offers timed deletion, not view-limited or burn-after-reading links. For a
+    “delete after first open” link, use a service built for that.</p>
+  <h3>Can I extend or cancel the timer?</h3>
+  <p>No. The choice is fixed at upload time. If you need a longer-lived copy, upload the file again with
+    <strong>Keep forever</strong> or a longer time before the first link expires.</p>
+  <h3>Does an expired image disappear from Google?</h3>
+  <p>Uploads are never indexed in the first place: pages and files send <code>noindex</code> and are not in
+    the sitemap. Expiry removes the file itself, so the link returns nothing even if someone saved it.</p>
+  <h3>Are temporary uploads private?</h3>
+  <p>They are link-only, but not password-protected. Anyone with the link can view the file until it
+    expires. See <a href="/private-image-hosting">private image hosting</a> for what that covers.</p>
+  <h3>Is there a limit on temporary uploads?</h3>
+  <p>No storage quota and no paid tier. Uploads are rate-limited to 30 per hour per IP address, and each
+    file can be up to {{MAX_UPLOAD}}.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload a temporary image</a></p>
+</main>

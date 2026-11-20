@@ -61,16 +61,20 @@ function site_footer(): string
       <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>$site</a>
       <nav class="footer-links" aria-label="Footer">
         <a href="/">Upload</a>
+        <a href="/free-image-hosting">Free image hosting</a>
+        <a href="/upload-image-get-link">Upload &amp; get a link</a>
+        <a href="/private-image-hosting">Private hosting</a>
+        <a href="/temporary-image-hosting">Temporary hosting</a>
+        <a href="/image-hosting-for-forums">For forums</a>
         <a href="/imgur-alternative">Imgur alternative</a>
         <a href="/imgbb-alternative">ImgBB alternative</a>
         <a href="/anonymous-image-hosting">Anonymous hosting</a>
-        <a href="/image-hosting-for-forums">For forums</a>
         <a href="/about">About</a>
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
         $contact
       </nav>
-      <p class="footer-note">© $year $site · Free image and video hosting, unlimited uploads</p>
+      <p class="footer-note">© $year $site · Free image hosting with no account, no ads and no public gallery</p>
     </div>
   </footer>
 HTML;
@@ -81,19 +85,39 @@ function content_meta(): array
 {
     $size = format_size(public_max_upload());
     return [
+        'free-image-hosting' => [
+            'title' => 'Free Image Hosting — Free Image Host, No Sign-Up, No Ads · ' . site_name(),
+            'description' => 'Free image hosting with no account, no ads and no public gallery. Upload an image and get a direct link in seconds. Up to ' . $size . ' per file.',
+            'crumb' => 'Free image hosting',
+        ],
+        'upload-image-get-link' => [
+            'title' => 'Upload Image and Get a Link — Free, No Sign-Up · ' . site_name(),
+            'description' => 'Upload an image and get a link in seconds: page link, direct link, Markdown, HTML or BBCode. Free, no account, up to ' . $size . ', no public gallery.',
+            'crumb' => 'Upload image, get link',
+        ],
+        'private-image-hosting' => [
+            'title' => 'Private Image Hosting — Link-Only, No Public Gallery · ' . site_name(),
+            'description' => 'Private image hosting without an account. No public gallery, no search indexing, random links and optional auto-delete. Free, up to ' . $size . ' per file.',
+            'crumb' => 'Private image hosting',
+        ],
+        'temporary-image-hosting' => [
+            'title' => 'Temporary Image Hosting — Auto-Delete in 1 Hour to 90 Days · ' . site_name(),
+            'description' => 'Free temporary image hosting with auto-delete after 1 hour, 1 day, 7, 30 or 90 days. No account, no public gallery, up to ' . $size . ' per file.',
+            'crumb' => 'Temporary image hosting',
+        ],
         'imgur-alternative' => [
-            'title' => 'Imgur Alternative — ' . $size . ' Free Image Hosting · ' . site_name(),
-            'description' => 'Looking for an Imgur alternative? ' . site_name() . ' hosts images free, without an account, up to ' . $size . ' each, with direct links, Markdown and BBCode.',
+            'title' => 'Imgur Alternative — Free Image Hosting, No Account, No Gallery · ' . site_name(),
+            'description' => 'Looking for an Imgur alternative? ' . site_name() . ' hosts images free, without an account, up to ' . $size . ' each, with direct links, Markdown and BBCode — and no public gallery.',
             'crumb' => 'Imgur alternative',
         ],
         'imgbb-alternative' => [
-            'title' => 'ImgBB Alternative — ' . $size . ' Free Image Hosting · ' . site_name(),
-            'description' => 'Swap ImgBB for ' . site_name() . ': no account, no ads, up to ' . $size . ' per image, direct links and BBCode. A free ImgBB alternative for forums and sharing.',
+            'title' => 'ImgBB Alternative — ' . $size . ' Free Image Hosting, No Ads · ' . site_name(),
+            'description' => 'Swap ImgBB for ' . site_name() . ': no account, no ads, no public gallery, up to ' . $size . ' per image, direct links and BBCode. A free ImgBB alternative for forums and sharing.',
             'crumb' => 'ImgBB alternative',
         ],
         'anonymous-image-hosting' => [
-            'title' => 'Anonymous Image Hosting — Upload Without an Account · ' . site_name(),
-            'description' => 'Upload images anonymously. No sign-up, no email, no ad trackers. Public or unlisted links, up to ' . $size . ' per image, free.',
+            'title' => 'Anonymous Image Hosting — Free, No Account, Link-Only · ' . site_name(),
+            'description' => 'Upload images anonymously. No sign-up, no email, no ad trackers, no public gallery. Link-only pages, optional auto-delete, up to ' . $size . ' per image, free.',
             'crumb' => 'Anonymous image hosting',
         ],
         'image-hosting-for-forums' => [
@@ -102,8 +126,8 @@ function content_meta(): array
             'crumb' => 'Image hosting for forums',
         ],
         'about' => [
-            'title' => 'About ' . site_name() . ' — How Our Free Image Hosting Works',
-            'description' => 'How ' . site_name() . ' works: free image hosting on Telegram-backed storage, no account, up to ' . $size . ' per image, and how we handle abuse and privacy.',
+            'title' => 'About ' . site_name() . ' — Free Image Hosting, No Account',
+            'description' => 'How ' . site_name() . ' works: free, link-only image hosting on Telegram-backed storage, no account, up to ' . $size . ' per image, and how we handle abuse and privacy.',
             'crumb' => 'About',
         ],
     ];
@@ -192,7 +216,7 @@ function home_page(): string
                 'name' => site_name(),
                 'url' => "$url/",
                 'logo' => "$url/icon-512.png",
-                'description' => 'Free image and video hosting with unlimited uploads and no account required.',
+                'description' => 'Free image and video hosting with unlimited uploads, no account and no public gallery.',
             ] + (contact_email() !== '' ? ['email' => contact_email()] : []),
             [
                 '@type' => 'WebApplication',
@@ -203,9 +227,12 @@ function home_page(): string
                 'browserRequirements' => 'Requires a modern browser with JavaScript enabled.',
                 'isAccessibleForFree' => true,
                 'featureList' => [
-                    'Image and video upload without an account',
+                    '100% free image and video hosting with no paid tier',
+                    'Upload without an account or email',
+                    'No public gallery: every upload is link-only and noindex',
                     'Direct file links, Markdown, HTML and BBCode',
                     'Uploads up to ' . format_size(public_max_upload()) . ' per file',
+                    'Optional auto-delete from 1 hour to 90 days',
                 ],
                 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
             ],
@@ -464,7 +491,7 @@ function message_page(string $title, string $message): string
         'description' => $message,
         'robots' => 'noindex',
         'body' => '<main class="empty-page"><h1>' . esc($title) . '</h1><p>' . esc($message)
-            . '</p><a class="btn primary" href="/">Go to the gallery</a></main>',
+            . '</p><a class="btn primary" href="/">Go to the uploader</a></main>',
     ]);
 }
 
@@ -490,9 +517,9 @@ function legal_page(string $which): string
 <p>Only upload images and videos you own or have the right to share. You must not upload anything that is
 illegal, including sexual content involving minors, content that infringes someone else's copyright or
 trademark, malware, or content that harasses, threatens or exposes private information about others.</p>
-<h2>Public and unlisted files</h2>
-<p>Files shown in the gallery are public. Unlisted files don't appear in the gallery or in search
-engines, but anyone with the link can open them. Don't upload anything private.</p>
+<h2>Link-only files</h2>
+<p>Uploads don't appear in a public gallery or in search engines, but anyone with the link can open
+them. Don't upload anything private, and use the delete-after option for files that should disappear.</p>
 <h2>Removal</h2>
 <p>We may remove any upload at any time, for any reason, without notice. To report a file or request
 removal of content you own, use the Report link on the file's page or email $contact.
@@ -509,15 +536,15 @@ HTML;
         $content = <<<HTML
 <p>$site doesn't use accounts, advertising trackers or analytics cookies.</p>
 <h2>What we store when you upload</h2>
-<p>The file itself, its file name, size, dimensions and (for videos) duration, the upload time, whether
-it's public or unlisted, and your IP address. The IP address is used to prevent abuse (upload limits)
-and to handle reports.</p>
+<p>The file itself, its file name, size, dimensions and (for videos) duration, the upload time, its
+delete-after setting and your IP address. The IP address is used to prevent abuse (upload limits) and
+to handle reports.</p>
 <h2>Where files are stored</h2>
 <p>Files are stored with Telegram, which we use as storage. Telegram processes the files under its own
 privacy policy.</p>
 <h2>Cookies</h2>
-<p>Visitors get no cookies. Your browser remembers your "Show in public gallery" choice locally on your
-device. The site administrator uses one sign-in cookie for the admin area.</p>
+<p>Visitors get no cookies, and the uploader doesn't store a preference in your browser. The site
+administrator uses one sign-in cookie for the admin area.</p>
 <h2>Third parties</h2>
 <p>Pages load the Inter font from Google Fonts, which receives your IP address when the font loads.</p>
 <h2>Removal and questions</h2>

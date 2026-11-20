@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{SITE_NAME}} — Free Image &amp; Video Hosting, Unlimited Uploads, No Sign-Up</title>
+  <title>Free Image Host &amp; Image Sharing — No Sign-Up, 100% Free · {{SITE_NAME}}</title>
   <meta name="description" content="{{DESCRIPTION}}">
   <link rel="canonical" href="{{SITE_URL}}/">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -11,15 +11,15 @@
   <meta property="og:site_name" content="{{SITE_NAME}}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{SITE_URL}}/">
-  <meta property="og:title" content="{{SITE_NAME}} — Free Image &amp; Video Hosting, No Account Needed">
+  <meta property="og:title" content="{{SITE_NAME}} — Free Image Hosting &amp; Image Sharing, No Sign-Up">
   <meta property="og:description" content="{{DESCRIPTION}}">
   <meta property="og:image" content="{{SITE_URL}}/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="{{SITE_NAME}}: free image and video hosting with unlimited uploads">
+  <meta property="og:image:alt" content="{{SITE_NAME}}: free image hosting with direct links, no account and no public gallery">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{SITE_NAME}} — Free Image &amp; Video Hosting, No Account Needed">
+  <meta name="twitter:title" content="{{SITE_NAME}} — Free Image Hosting &amp; Image Sharing, No Sign-Up">
   <meta name="twitter:description" content="{{DESCRIPTION}}">
   <meta name="twitter:image" content="{{SITE_URL}}/og-image.png">
   <link rel="stylesheet" href="{{CSS_URL}}">
@@ -34,8 +34,9 @@
   <main>
     <section class="hero" id="hero" tabindex="0" role="button" aria-label="Upload images and videos">
       <div class="hero-icon" data-icon="image"></div>
-      <h1>Free image and video hosting. Share in seconds.</h1>
-      <p>Drop images or videos here, paste from your clipboard, or choose files. No account, unlimited uploads, up to {{MAX_UPLOAD}} per file.</p>
+      <h1>Free image hosting. Upload an image, get a link.</h1>
+      <p>100% free image and video hosting: no account, no ads, no public gallery. Drop a file, paste a
+        screenshot, or choose from your device — up to {{MAX_UPLOAD}} each.</p>
       <span class="btn primary"><span data-icon="upload"></span>Choose files</span>
       <div class="upload-options" id="upload-options" role="group" aria-label="Upload options">
         <label class="expiry" for="expiry">
@@ -49,27 +50,36 @@
       <p class="hint" id="limits"></p>
     </section>
 
+    <p class="hero-free">
+      <span>100% free</span><span>No account</span><span>No ads</span><span>No public gallery</span><span>Link-only</span>
+    </p>
+
     <div class="results" id="results"></div>
 
-    <section class="features" aria-labelledby="unlimited-title">
-      <h2 id="unlimited-title">Unlimited free image and video hosting, without the catches</h2>
+    <section class="features" aria-labelledby="free-title">
+      <h2 id="free-title">Free image hosting, and here is exactly what “free” means</h2>
       <div class="prose">
-        <p>{{SITE_NAME}} is free image and video hosting built for the way people actually share media: a
-          quick upload, a link you can paste anywhere, and no account in the way. There is no storage quota
-          and no limit on how many files you host. Each file can be up to {{MAX_UPLOAD}} — far more than the
-          50 MB Imgur accepts for a still image — and we serve the original file, not a recompressed copy.</p>
-        <p>Every upload gets two links. The <strong>page link</strong> opens the image or video on {{SITE_NAME}}
-          with copy-ready Markdown, HTML and BBCode. The <strong>direct link</strong> points straight at the
-          file, so it works in forums, Reddit, Discord, a blog, an <code>&lt;img&gt;</code> or
-          <code>&lt;video&gt;</code> tag on your own site.</p>
-        <p>Uploads are public, so an image or video can appear in search results once it has been shared.</p>
+        <p>{{SITE_NAME}} is a free image host and free image sharing site for people who want a link, not
+          another account. There is no sign-up, no email to verify, no credit card, no trial, no paid
+          upgrade and no storage quota. Upload as many images and videos as you need, each up to
+          {{MAX_UPLOAD}}. Hosting and bandwidth are free; links have no automatic expiry unless you choose
+          a delete-after time.</p>
+        <p>There is also <strong>no public gallery to browse</strong>. Every upload is link-only: you get a
+          page link and a direct link, and only people you send the link to can open it. Upload pages carry
+          <code>noindex</code>, so they do not show up in Google Images or search results. That is the
+          opposite of an Imgur-style community feed — no votes, no comments, no strangers scrolling your
+          files.</p>
+        <p>Each result gives you a <strong>page link</strong> that opens the file with copy-ready Markdown,
+          HTML and BBCode, and a <strong>direct link</strong> that points straight at the image or video.
+          The direct link works in an <code>&lt;img&gt;</code> or <code>&lt;video&gt;</code> tag, a forum
+          post, a marketplace listing, a chat, or a CSS background.</p>
         <ul class="checks">
-          <li>No account, no email, no verification</li>
-          <li>Up to {{MAX_UPLOAD}} per file, with the original kept</li>
-          <li>Direct links, BBCode, Markdown and HTML for forums and blogs</li>
-          <li>No ads and no tracking cookies</li>
-          <li>Self-deleting uploads: choose a delete-after time from 1 hour to 90 days</li>
-          <li>JPG, PNG, GIF, WebP, AVIF, BMP and MP4, WebM, MOV videos</li>
+          <li><strong>100% free.</strong> No account, no paid tier and no charge for storage or bandwidth</li>
+          <li><strong>No public gallery.</strong> Link-only uploads, marked <code>noindex</code></li>
+          <li><strong>Up to {{MAX_UPLOAD}} per file</strong>, and the original is served — not a recompressed copy</li>
+          <li><strong>Images and videos</strong>: JPG, PNG, GIF, WebP, AVIF, BMP, MP4, WebM, MOV and more</li>
+          <li><strong>Direct link, page link, Markdown, HTML and BBCode</strong> for every upload</li>
+          <li><strong>Delete-after timer</strong>: 1 hour, 1 day, 7, 30 or 90 days — or keep it</li>
         </ul>
       </div>
     </section>
@@ -89,24 +99,52 @@
             </tr>
           </thead>
           <tbody>
+            <tr><th scope="row">Price</th><td class="own">100% free</td><td>Free with ads</td><td>Free with ads</td></tr>
             <tr><th scope="row">Account needed to upload</th><td class="own">No</td><td>No</td><td>No</td></tr>
             <tr><th scope="row">Maximum file size</th><td class="own">{{MAX_UPLOAD}}</td><td>50 MB</td><td>32 MB</td></tr>
+            <tr><th scope="row">Video uploads</th><td class="own">Yes</td><td>Yes</td><td>No</td></tr>
             <tr><th scope="row">Direct image and video links</th><td class="own">Yes</td><td>Yes</td><td>Images only</td></tr>
             <tr><th scope="row">BBCode and HTML embeds</th><td class="own">Yes</td><td>Direct link</td><td>Yes</td></tr>
             <tr><th scope="row">Original file kept</th><td class="own">Yes</td><td>Compressed over 1 MB</td><td>Yes</td></tr>
+            <tr><th scope="row">Public gallery or feed</th><td class="own">No — link-only</td><td>Yes</td><td>Yes</td></tr>
             <tr><th scope="row">Ads</th><td class="own">None</td><td>Yes</td><td>Yes</td></tr>
-            <tr><th scope="row">Price</th><td class="own">Free</td><td>Free</td><td>Free</td></tr>
+            <tr><th scope="row">Delete-after control</th><td class="own">1 hour – 90 days</td><td>No</td><td>5 min – 6 months</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="table-note">Free-plan limits for Imgur and ImgBB are taken from their public help pages and
-        current pricing pages, checked November 2026. Their plans can change — check their sites for the
-        latest.</p>
+      <p class="table-note">Free-plan details for Imgur and ImgBB are taken from their public help and
+        pricing pages, checked November 2026. Their plans can change — check their sites for the latest.</p>
+    </section>
+
+    <section class="guides" aria-labelledby="uses-title">
+      <h2 id="uses-title">A free image host for the places people actually share</h2>
+      <div class="guide-grid">
+        <a class="guide-card" href="/image-hosting-for-forums">
+          <strong>Forums &amp; message boards</strong>
+          <span>BBCode and HTML that work on the first paste.</span>
+        </a>
+        <a class="guide-card" href="/upload-image-get-link">
+          <strong>Upload an image, get a link</strong>
+          <span>The whole flow in four steps, with no sign-up.</span>
+        </a>
+        <a class="guide-card" href="/private-image-hosting">
+          <strong>Private, link-only hosting</strong>
+          <span>No gallery, no indexing, only people with the link.</span>
+        </a>
+        <a class="guide-card" href="/temporary-image-hosting">
+          <strong>Temporary image hosting</strong>
+          <span>Choose when the file deletes itself.</span>
+        </a>
+      </div>
     </section>
 
     <section class="guides" aria-labelledby="guides-title">
       <h2 id="guides-title">Image hosting guides</h2>
       <div class="guide-grid">
+        <a class="guide-card" href="/free-image-hosting">
+          <strong>Free image hosting</strong>
+          <span>What you get, what free really means, and how it compares.</span>
+        </a>
         <a class="guide-card" href="/imgur-alternative">
           <strong>Imgur alternative</strong>
           <span>Why people switch, and the limits you get instead.</span>
@@ -118,10 +156,6 @@
         <a class="guide-card" href="/anonymous-image-hosting">
           <strong>Anonymous image hosting</strong>
           <span>Upload without signing up and keep the link unlisted.</span>
-        </a>
-        <a class="guide-card" href="/image-hosting-for-forums">
-          <strong>Image hosting for forums</strong>
-          <span>BBCode, Markdown and HTML that work on the first paste.</span>
         </a>
         <a class="guide-card" href="/about">
           <strong>About {{SITE_NAME}}</strong>
@@ -145,8 +179,8 @@
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="image"></span>
-          <h3>Rich link previews</h3>
-          <p>Shared links show the picture, or a video poster frame, in WhatsApp, Telegram, Discord, X and Facebook.</p>
+          <h3>No public gallery</h3>
+          <p>Uploads are link-only and noindex. There is no feed for strangers to browse.</p>
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="upload"></span>
@@ -155,8 +189,8 @@
         </article>
         <article class="feature">
           <span class="feature-icon" data-icon="cloud"></span>
-          <h3>Free</h3>
-          <p>Free image and video hosting with fast, lightweight pages that work on any phone or computer.</p>
+          <h3>Free, not freemium</h3>
+          <p>No account, no paid tier and no ads. Full-size hosting and links at no cost.</p>
         </article>
       </div>
     </section>
@@ -164,9 +198,17 @@
     <section class="faq" aria-labelledby="faq-title">
       <h2 id="faq-title">Frequently asked questions</h2>
       <details>
-        <summary>Is {{SITE_NAME}} free?</summary>
-        <p>Yes. Uploading, sharing and viewing images and videos is free, and you don't need an account.
-          There is no storage quota and no charge for hosting or bandwidth.</p>
+        <summary>Is {{SITE_NAME}} really 100% free?</summary>
+        <p>Yes. Uploading, hosting, sharing and viewing images and videos is free. There is no account, no
+          credit card, no free trial, no paid upgrade and no storage quota. There is also no advertising on
+          the public site. Rate limits exist to stop abuse: 30 uploads per hour from one IP address.</p>
+      </details>
+      <details>
+        <summary>Do my uploads appear in a public gallery?</summary>
+        <p>No. {{SITE_NAME}} has no public gallery or recent-uploads feed. Every upload is link-only: it gets
+          its own page and direct link, the page is marked <code>noindex</code>, and it is not added to the
+          sitemap. Only people with the link can open it. See
+          <a href="/private-image-hosting">private image hosting</a> for the details.</p>
       </details>
       <details>
         <summary>How many files can I upload?</summary>
@@ -186,6 +228,12 @@
           accepts a media URL. Forums and message boards usually want the BBCode tab instead.</p>
       </details>
       <details>
+        <summary>How do I upload an image and get a link?</summary>
+        <p>Drop the file on the upload box, paste it with Ctrl&nbsp;+&nbsp;V, or choose it from your device.
+          When it finishes, copy the page link or the direct link. The
+          <a href="/upload-image-get-link">upload image and get a link guide</a> walks through it.</p>
+      </details>
+      <details>
         <summary>How do I share an image or video?</summary>
         <p>Upload it, then copy one of the links shown under it. The page link opens the file on {{SITE_NAME}};
           the direct link points at the image or video file itself.</p>
@@ -203,8 +251,9 @@
       <details>
         <summary>Is {{SITE_NAME}} an Imgur or ImgBB alternative?</summary>
         <p>Yes. It does the same job — upload an image, get a shareable link — with a much larger per-image
-          limit and no account. See the <a href="/imgur-alternative">Imgur alternative</a> and
-          <a href="/imgbb-alternative">ImgBB alternative</a> pages for a side-by-side comparison.</p>
+          limit, no account and no public gallery. See the <a href="/imgur-alternative">Imgur alternative</a>
+          and <a href="/imgbb-alternative">ImgBB alternative</a> pages for a side-by-side comparison, or the
+          <a href="/free-image-hosting">free image hosting guide</a>.</p>
       </details>
       <details>
         <summary>How long are files kept?</summary>

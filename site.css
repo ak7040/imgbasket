@@ -135,6 +135,24 @@ main { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px 28
 .hero p { margin: 0; color: var(--muted); }
 .hero .btn { margin-top: 14px; }
 .hero .hint { font-size: 13px; color: var(--faint); margin-top: 4px; }
+/* The free/no-account/link-only promises under the hero */
+.hero-free {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.hero-free span { display: inline-flex; align-items: center; gap: 7px; }
+.hero-free span::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
 /* "Delete after" range selector inside the hero */
 .upload-options { margin-top: 10px; cursor: default; }
 .expiry {

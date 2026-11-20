@@ -24,8 +24,20 @@ function db(): PDO
 // Creates the tables on first run, and adds new ones on later versions
 function ensure_schema(PDO $pdo): void
 {
-    $marker = storage_dir('state') . '/schema-v4';
-    if (is_file($marker)) return;
+    $state = storage_dir('state');
+    $marker = $state . '/schema-v4';
+    $private = $state . '/schema-v5';
+    // v5: visitor uploads are link-only. No public gallery, no search indexing. Existing public
+    // uploads are converted once, so the site's copy matches what it actually does.
+    $make_private = function () use ($pdo, $private): void {
+        if (is_file($private)) return;
+        $pdo->exec("UPDATE files SET in_gallery = 0 WHERE source = 'public'");
+        touch($private);
+    };
+    if (is_file($marker)) {
+        $make_private();
+        return;
+    }
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS folders (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -126,6 +138,7 @@ function ensure_schema(PDO $pdo): void
         @rmdir($cache);
     }
     touch($marker);
+    $make_private();
 }
 
 function q_all(string $sql, array $params = []): array

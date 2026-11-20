@@ -6,9 +6,9 @@
 
   <h2>What the site does</h2>
   <p>Anyone can upload an image or video from the home page. Each upload produces a page on {{SITE_NAME}}
-    and a direct link to the file, plus Markdown, HTML and BBCode for forums and blogs. Public files
-    appear in the gallery and can be indexed by search engines. Unlisted files are link-only and carry
-    <code>noindex</code>.</p>
+    and a direct link to the file, plus Markdown, HTML and BBCode for forums and blogs. Uploads are
+    link-only: they are not listed in a gallery or the sitemap, and their pages carry <code>noindex</code>,
+    so only people with the link can find them.</p>
   <p>Files are accepted up to {{MAX_UPLOAD}} each: JPG, PNG, GIF, WebP, AVIF and BMP images, plus MP4,
     WebM, MOV, M4V and OGV videos. There is no storage quota and no account system on the public site.
     Uploads are rate-limited to 30 per hour from one IP address to keep automated abuse down.</p>
@@ -19,8 +19,8 @@
     is used as the storage layer; files are served back through {{SITE_NAME}} with the same links either
     way. Nothing is kept on this server's disk: each view streams the file from Telegram.</p>
   <p>Two preview sizes are generated for each image: a JPEG for chat-app link previews and a WebP for the
-    gallery grid. Videos get a poster frame in the same two sizes when FFmpeg is available on the server.
-    The direct link always points at the original file, not the preview.</p>
+    uploader's result tiles. Videos get a poster frame in the same two sizes when FFmpeg is available on
+    the server. The direct link always points at the original file, not the preview.</p>
 
   <h2>Who runs it</h2>
   <p>{{SITE_NAME}} is run by an independent operator, not a large company. There is no advertising network,

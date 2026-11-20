@@ -1,0 +1,109 @@
+<main class="content-page">
+  <h1>Upload an image and get a link — free, no sign-up</h1>
+  <p class="lede">Drop an image on {{SITE_NAME}}, copy the link, paste it wherever you need it. The whole
+    process takes a few seconds, needs no account, and gives you four kinds of link: a page link, a direct
+    link, Markdown/HTML and BBCode. Images and videos up to {{MAX_UPLOAD}} are supported.</p>
+
+  <h2>Four steps to an image link</h2>
+  <ol>
+    <li><strong>Open the uploader.</strong> Go to <a href="/">imgbasket.com</a>. The upload box is at the
+      top of the page and works on desktop and mobile.</li>
+    <li><strong>Add your image.</strong> Drag and drop it, paste it from the clipboard with
+      Ctrl&nbsp;+&nbsp;V (⌘&nbsp;+&nbsp;V on a Mac), or press <strong>Choose files</strong>. You can select
+      several files at once.</li>
+    <li><strong>Pick a delete time if you want one.</strong> <strong>Delete after</strong> offers 1 hour,
+      1 day, 7, 30 or 90 days. The default, <strong>Keep forever</strong>, leaves the link active until you
+      remove the file.</li>
+    <li><strong>Copy the link.</strong> The result box shows the page link and the direct link, plus tabs
+      for Markdown, HTML and BBCode. Press <strong>Copy</strong> next to the one you need.</li>
+  </ol>
+  <p>There is no confirmation step and no email. The link is live as soon as the upload finishes.</p>
+
+  <h2>Which link should you use?</h2>
+  <div class="table-wrap">
+    <table class="compare">
+      <thead>
+        <tr><th scope="col">Link</th><th scope="col">What it does</th><th scope="col" class="own">Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Page link</th>
+          <td>A viewer page with the image, a download button and copy-ready embed codes.</td>
+          <td class="own">Sending to a person, chat, email, a support ticket</td>
+        </tr>
+        <tr>
+          <th scope="row">Direct link</th>
+          <td>Points at the image or video file itself. Ends in the real extension, e.g. <code>.png</code>.</td>
+          <td class="own">Websites, forums, marketplaces, CSS, bots, APIs</td>
+        </tr>
+        <tr>
+          <th scope="row">Markdown</th>
+          <td><code>![name](direct-link)</code>, ready to paste as-is.</td>
+          <td class="own">Reddit, GitHub, Discord, Notion, Obsidian</td>
+        </tr>
+        <tr>
+          <th scope="row">HTML</th>
+          <td>An <code>&lt;img&gt;</code> or <code>&lt;video&gt;</code> tag with the direct link filled in.</td>
+          <td class="own">Blogs and websites you control</td>
+        </tr>
+        <tr>
+          <th scope="row">BBCode</th>
+          <td><code>[img]direct-link[/img]</code> for forum software.</td>
+          <td class="own">phpBB, vBulletin, XenForo, Invision, many others</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Upload an image and get a link on your phone</h2>
+  <p>The uploader is a normal web page, so it works in Safari, Chrome and Firefox on iOS and Android. Tap
+    the upload box, choose <strong>Photo Library</strong> or <strong>Camera</strong>, then copy the link from
+    the result. On mobile, the copy button puts the link on the clipboard so you can paste it into any app.
+    The result also shows a QR code for the direct link, which is handy when you need to move an image from
+    a computer to a phone.</p>
+
+  <h2>Where the link works</h2>
+  <ul>
+    <li><strong>Forums:</strong> use BBCode, or the direct link inside an existing
+      <code>[img]</code> tag. See <a href="/image-hosting-for-forums">image hosting for forums</a>.</li>
+    <li><strong>Reddit and Discord:</strong> paste the direct link, or the Markdown version. Both render
+      automatically.</li>
+    <li><strong>Your own website:</strong> use the HTML tab or drop the direct link into an
+      <code>&lt;img src="…"&gt;</code>. Hotlinking is allowed.</li>
+    <li><strong>Marketplaces and listings:</strong> use the direct link. Keep the upload on
+      <strong>Keep forever</strong> so the listing doesn't lose its image.</li>
+    <li><strong>Documents and tickets:</strong> use the page link, or a short delete-after time if the
+      screenshot should not stay online.</li>
+  </ul>
+
+  <h2>What happens to the image after you upload it</h2>
+  <p>{{SITE_NAME}} is a <a href="/private-image-hosting">link-only image host</a>. The upload gets a random
+    link, its page is marked <code>noindex</code>, and it is not added to a public gallery or the sitemap.
+    Only someone with the link can open it. There is no account attached to the file; the site stores an IP
+    address for rate limiting and abuse reports, as described in the <a href="/privacy">Privacy Policy</a>.
+    Uploads are limited to 30 per hour per IP address.</p>
+  <p>Links are not password-protected. Anyone who has a link can open it and can forward it, so don't upload
+    anything you would not want a stranger to see. If you need the file to disappear on its own, choose a
+    <a href="/temporary-image-hosting">temporary hosting</a> time before uploading.</p>
+
+  <h2>Common questions</h2>
+  <h3>Do I need an account to get an image link?</h3>
+  <p>No. Uploading and copying a link works without an account, email address or password. That is true for
+    images, videos and every link format.</p>
+  <h3>Is there a file size limit?</h3>
+  <p>Up to {{MAX_UPLOAD}} per file. The limit is shown under the upload box before you choose a file. The
+    original is stored and served, so the direct link is not a compressed copy.</p>
+  <h3>Why does my link show a preview in chat apps?</h3>
+  <p>Each page has an Open Graph preview image made at upload time, so WhatsApp, Telegram, Discord, X and
+    Facebook show the picture instead of a blank box. Videos use a poster frame when FFmpeg is available.</p>
+  <h3>Can I delete the image after sharing the link?</h3>
+  <p>There is no per-file delete button on the public site, because there is no account to attach it to. Use
+    the <strong>Delete after</strong> option before uploading if the file is temporary, or contact the site
+    using the Report link on the file's page.</p>
+  <h3>Can I use the link commercially?</h3>
+  <p>You can use the link for a website, listing or document you own, as long as you have the rights to the
+    image. Don't upload other people's work without permission. The <a href="/terms">Terms of Use</a> cover
+    the rules.</p>
+
+  <p class="cta-line"><a class="btn primary" href="/"><span data-icon="upload"></span>Upload an image and get a link</a></p>
+</main>

@@ -2,7 +2,7 @@
   <h1>Anonymous image hosting without an account</h1>
   <p class="lede">Sometimes you need to share one picture and you don't want to create a profile to do it.
     {{SITE_NAME}} lets you upload an image and get a link with no sign-up, no email and no verification
-    step. Uploads can be public or link-only, and you can choose before the file leaves your device.</p>
+    step. Every upload is link-only: no public gallery, no search indexing, no account.</p>
 
   <h2>What anonymous means here</h2>
   <p>Anonymous means there is no account, profile or username attached to the upload. It does not mean the
@@ -13,8 +13,8 @@
       public site.</li>
     <li><strong>IP address stored.</strong> Each upload records the connection's IP address so we can apply
       rate limits and handle abuse reports. See the <a href="/privacy">Privacy Policy</a>.</li>
-    <li><strong>Public or unlisted.</strong> Unlisted images get a random link, stay out of the gallery and
-      carry <code>noindex</code>, so search engines won't list them.</li>
+    <li><strong>No public gallery.</strong> Uploads are link-only, stay out of the gallery and the sitemap,
+      and carry <code>noindex</code>, so search engines won't list them.</li>
     <li><strong>No expiry date.</strong> We don't delete images on a timer, though a free service can't
       promise permanence.</li>
   </ul>
@@ -22,30 +22,30 @@
   <h2>How to upload without signing up</h2>
   <ol>
     <li>Open the <a href="/">home page</a>. The uploader is the big drop area at the top.</li>
-    <li>Decide whether the image should be <strong>public</strong> (shown in the gallery) or
-      <strong>unlisted</strong>. Turn off “Show in public gallery” for a private, link-only image.</li>
     <li>Drop the file, paste it with Ctrl&nbsp;+&nbsp;V, or choose it from your device. Files up to
-      {{MAX_UPLOAD}} are accepted.</li>
+      {{MAX_UPLOAD}} are accepted. The upload is link-only automatically.</li>
+    <li>Optionally set <strong>Delete after</strong> to 1 hour, 1 day, 7, 30 or 90 days.</li>
     <li>Copy the page link or the direct link from the result. That's it — no confirmation email, no
       account to create.</li>
   </ol>
 
-  <h2>Public vs unlisted</h2>
+  <h2>Link-only by default</h2>
   <div class="table-wrap">
     <table class="compare">
       <thead>
-        <tr><th scope="col"></th><th scope="col" class="own">Public</th><th scope="col">Unlisted</th></tr>
+        <tr><th scope="col"></th><th scope="col" class="own">{{SITE_NAME}}</th><th scope="col">Public gallery host</th></tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Appears in the gallery</th><td class="own">Yes</td><td>No</td></tr>
-        <tr><th scope="row">Can appear in search results</th><td class="own">Yes</td><td>No, <code>noindex</code></td></tr>
+        <tr><th scope="row">Appears in a gallery or feed</th><td class="own">No</td><td>Yes</td></tr>
+        <tr><th scope="row">Can appear in search results</th><td class="own">No, <code>noindex</code></td><td>Usually</td></tr>
         <tr><th scope="row">Anyone with the link can view it</th><td class="own">Yes</td><td>Yes</td></tr>
-        <tr><th scope="row">Good for</th><td class="own">Wallpapers, public examples, screenshots</td><td>Client previews, private screenshots, drafts</td></tr>
+        <tr><th scope="row">Good for</th><td class="own">Client previews, screenshots, drafts, one-off shares</td><td>Wallpapers, public examples, community posts</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="table-note">Unlisted is not password protection. Anyone you send the link to can open it, and
-    they can forward it. Don't upload anything you would not want a stranger to see.</p>
+  <p class="table-note">Link-only is not password protection. Anyone you send the link to can open it, and
+    they can forward it. Don't upload anything you would not want a stranger to see. See
+    <a href="/private-image-hosting">private image hosting</a> for the full picture.</p>
 
   <h2>Responsible use</h2>
   <p>Anonymity is for convenience, not for getting away with something. Upload only images you own or have
@@ -55,8 +55,9 @@
 
   <h2>Common questions</h2>
   <h3>Do you use cookies?</h3>
-  <p>Visitors get no cookies from the public site. Your browser stores your public/unlisted choice locally
-    so it remembers your preference. Only the site administrator has a sign-in cookie.</p>
+  <p>Visitors get no cookies from the public site. There is no analytics script and no advertising
+    script, and the upload choice is not stored in your browser. Only the site administrator has a
+    sign-in cookie.</p>
   <h3>Can I upload from my phone?</h3>
   <p>Yes. The uploader works in mobile browsers, and you can pick an image from the photo library. The
     result page also offers a QR code for the direct link.</p>

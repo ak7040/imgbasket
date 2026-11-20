@@ -5,9 +5,9 @@ The code behind [imgbasket.com](https://imgbasket.com).
 Free image and video hosting with a private drive, built in PHP + MySQL. Files are stored on Telegram:
 in your own account's **Saved Messages** (default), or in a private channel through a bot.
 
-- **Public site** (`/`): anyone can upload images and videos, browse the gallery of recent uploads,
-  and get share links (page link, direct link, Markdown, HTML, BBCode). No account needed. Uploads
-  can be public (in the gallery) or unlisted (link only).
+- **Public site** (`/`): anyone can upload images and videos and get share links (page link, direct
+  link, Markdown, HTML, BBCode). No account needed. Uploads are link-only: there is no public gallery,
+  and file pages are `noindex` and left out of the sitemap.
 - **Admin** (`/admin`, password protected): a drive with folders, search, grid/list view, and
   moderation of visitors' uploads, with the uploader's IP address.
 
@@ -22,7 +22,7 @@ in your own account's **Saved Messages** (default), or in a private channel thro
 - No file data is kept on the server's disk: every request streams the file from Telegram, so
   deleting a file in the admin really removes it everywhere.
 - Images get two small previews made with GD: a JPEG for link previews in chat apps (WhatsApp,
-  Telegram, Discord, X…) and a WebP for gallery tiles. The previews are stored in Telegram too, as
+  Telegram, Discord, X…) and a small WebP for previews inside the uploader. The previews are stored in Telegram too, as
   extra messages next to the file (two per image).
 - Videos work the same way. They are stored as **documents**, so Telegram keeps the original bytes
   without transcoding, and browsers play them through this site. Saved Messages supports HTTP range
@@ -35,9 +35,9 @@ in your own account's **Saved Messages** (default), or in a private channel thro
   messages, and returns 404. Deleting through the admin is still cleanest, since it removes
   everything at once.
 - Visitors can set an upload to **delete itself** after 1 hour, 1 day, 7, 30 or 90 days (or keep it
-  forever, the default). The choice is stored in `files.expires_at`; expired files vanish from the
-  gallery and sitemap, their links return 410, and they are deleted from Telegram in small batches
-  from normal traffic. Run `php scripts/purge-expired.php` from cron for prompt cleanup.
+  forever, the default). The choice is stored in `files.expires_at`; expired files return 410, are left
+  out of all listings, and are deleted from Telegram in small batches from normal traffic. Run
+  `php scripts/purge-expired.php` from cron for prompt cleanup.
 
 ## Requirements
 
@@ -180,26 +180,35 @@ public site both show the current limit.
 
 ## SEO
 
-- **Home page:** keyword-focused title and description, canonical URL, Open Graph/Twitter tags with a
-  1200×630 share image (`og-image.png`), JSON-LD structured data (WebSite, Organization, WebApplication),
-  and crawlable content: the unlimited-upload pitch, an ImgBasket vs Imgur vs ImgBB comparison table,
-  feature cards, guide links and an FAQ.
-- **Search-facing pages** (copy lives in `app/views/pages/`): `/imgur-alternative`,
-  `/imgbb-alternative`, `/anonymous-image-hosting`, `/image-hosting-for-forums` and `/about`. Each has
-  its own title, description, canonical URL, breadcrumbs and `BreadcrumbList` JSON-LD. These target
-  "imgur alternative", "imgbb alternative", "anonymous image hosting" and "image hosting for forums".
+- **Positioning:** the site is a **free image host and image sharing tool**, not a gallery community.
+  Every visitor upload is link-only (`in_gallery = 0`), its page is `noindex`, and it is never added
+  to the sitemap. Copy leads with "100% free", "no account", "no ads" and "no public gallery" — the
+  words people actually search for.
+- **Home page:** title and description target "free image host" / "free image sharing" / "no sign-up".
+  It has a canonical URL, Open Graph/Twitter tags with a 1200×630 share image (`og-image.png`),
+  JSON-LD structured data (WebSite, Organization, WebApplication), and crawlable copy: what "free"
+  means, a link-only explanation, an ImgBasket vs Imgur vs ImgBB table, use-case links and an FAQ.
+- **Search-facing pages** (copy lives in `app/views/pages/`, metadata in `content_meta()` in
+  `app/pages.php`):
+  - `/free-image-hosting` — "free image hosting", "free image host", "free image sharing site"
+  - `/upload-image-get-link` — "upload image and get link", "upload photo get link"
+  - `/private-image-hosting` — "private image hosting", "link only image hosting", "no public gallery"
+  - `/temporary-image-hosting` — "temporary image hosting", "delete after", "expiring image link"
+  - `/imgur-alternative`, `/imgbb-alternative`, `/anonymous-image-hosting`,
+    `/image-hosting-for-forums`, `/about`
+
+  Each has its own title, description, canonical URL, breadcrumbs and `BreadcrumbList` JSON-LD.
   Edit the HTML files to change the copy; no PHP edits are needed.
 - **File pages** (`/s/<token>`): a descriptive title and description built from the file name,
   canonical URL, `ImageObject` or `VideoObject` and `BreadcrumbList` structured data, image alt text,
-  a large preview for search, and internal links back to the uploader and the forum guide. Video
+  and internal links back to the uploader. They carry `noindex` because uploads are link-only. Video
   pages also get `og:video` tags; when FFmpeg made a poster, it is used as the link-preview image.
-- **`/sitemap.xml`:** the home page, the five content pages, legal pages and every **public gallery**
-  image, with image tags and titles. `/robots.txt` points to it and keeps `/admin` and `/api/` out of
-  search. It still returns the static pages if the database is briefly unavailable.
-- **Crawlable pages:** every public gallery image or video has an indexable page at `/s/<token>` and
-  is listed in the sitemap, so files are reachable without relying on the home page alone.
-- **Unlisted images stay private:** their pages carry `noindex`, and their files and previews are
-  sent with `X-Robots-Tag: noindex`. They never appear in the sitemap. The admin is `noindex` too.
+- **`/sitemap.xml`:** the home page, the nine content pages and the legal pages only. Uploads are
+  never listed, so the sitemap stays small and accurate. `/robots.txt` points to it and keeps
+  `/admin` and `/api/` out of search. It does not need the database.
+- **Link-only uploads:** pages send `noindex, nofollow`, and files and previews send
+  `X-Robots-Tag: noindex`. The admin is `noindex` too. The `schema-v5` migration converts any upload
+  made before this change.
 - **One address:** `www.imgbasket.com` redirects to `imgbasket.com` (the `public_url` host), and a
   trailing slash on a content page redirects to the canonical URL. Turn on Force HTTPS in hPanel for the
   `https://` part.
@@ -207,7 +216,7 @@ public site both show the current limit.
 - **IndexNow:** the `<32-hex>.txt` file in the repository root is the IndexNow key. Run
   `scripts/indexnow.sh` after a deploy to submit every sitemap URL to Bing (and Copilot) without waiting
   for a crawl. Pass URLs as arguments to submit only those.
-- **Speed:** compression and browser caching in `.htaccess`, lazy-loaded gallery thumbnails, width/height
+- **Speed:** compression and browser caching in `.htaccess`, lazy-loaded thumbnails, width/height
   on images so the page doesn't jump, and a small HTML payload (Lighthouse mobile: Performance 99,
   SEO 100).
 - **Trust pages:** `/terms`, `/privacy`, `/about` and a **Report** link on every image page.
@@ -216,7 +225,7 @@ public site both show the current limit.
 
 1. Add the site in [Google Search Console](https://search.google.com/search-console). Use the
    "HTML tag" method: put the code in `google_site_verification`, then verify.
-2. Submit `https://imgbasket.com/sitemap.xml` under Sitemaps. Request indexing for `/` and the five
+2. Submit `https://imgbasket.com/sitemap.xml` under Sitemaps. Request indexing for `/` and the nine
    content pages under URL Inspection.
 3. Do the same in [Bing Webmaster Tools](https://www.bing.com/webmasters) (it can import from Search
    Console), then run `scripts/indexnow.sh`.
@@ -229,9 +238,11 @@ public site both show the current limit.
 
 **Ranking reality check:** these changes fix on-page targeting, internal linking and discovery. They do
 not create authority by themselves. A new domain needs links and time: get listed in image-hosting
-directories and "best free image host" roundups, answer real questions where a link is welcome, and seed
-the public gallery with images people actually search for. Without backlinks, expect new pages to sit on
-page 2–5 for competitive terms such as "free image hosting".
+directories and "best free image host" roundups, answer real questions where a link is welcome, and
+publish the comparison pages competitors use to rank themselves (an honest "best free image hosting
+sites" listicle is the format that owns this SERP). Without backlinks, expect new pages to sit on page
+2–5 for competitive terms such as "free image hosting". `SEO-KEYWORDS.md` holds the keyword research and
+the page map.
 
 ## Link previews
 
@@ -251,6 +262,7 @@ qrcode.js            QR code generator (qrcode-generator 1.4.4, MIT) used on upl
 icons.js, favicon.svg, favicon.ico, site.webmanifest
 icon-192.png, icon-512.png, icon-maskable-192.png, icon-maskable-512.png, apple-touch-icon.png
 og-image.png         Share image for the home page
+SEO-KEYWORDS.md      Keyword research, SERP notes and the page map
 assets/admin/        Admin page script and styles
 extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
 app/                 PHP code, config, page templates (views/), and storage/ (not web-accessible)

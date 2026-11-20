@@ -1,5 +1,5 @@
 <?php
-// Public site: home page, gallery API, anonymous image uploads, image pages, files and thumbnails
+// Public site: home page, content pages, anonymous image uploads, link-only file pages, files and thumbnails
 
 function site_route(string $method, string $path): never
 {
@@ -96,7 +96,7 @@ function public_item(array $file): array
 {
     $kind = kind_of($file['mime']);
     if ($file['mime'] === 'image/gif') {
-        // GIFs keep their animation; use the original in the gallery
+        // GIFs keep their animation; use the original as the preview
         $thumb = raw_path($file);
     } elseif (is_image($file)) {
         $thumb = '/t/' . $file['share_token'] . '.webp';
@@ -127,22 +127,9 @@ function public_item(array $file): array
 
 function site_gallery(): never
 {
-    maybe_purge_expired();
-    $limit = 30;
-    $before = (int) ($_GET['before'] ?? 0) ?: PHP_INT_MAX;
-    // One extra row tells us whether there's another page. Expired files leave the gallery even if
-    // the Telegram messages haven't been deleted yet.
-    $rows = array_map('file_row', q_all(
-        'SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
-         AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())
-         AND id < ? ORDER BY id DESC LIMIT ' . ($limit + 1),
-        [$before]
-    ));
-    $page = array_slice($rows, 0, $limit);
-    json_out([
-        'items' => array_map('public_item', $page),
-        'next' => count($rows) > $limit ? end($page)['id'] : null,
-    ]);
+    // There is no public gallery: every visitor upload is link-only. The endpoint is kept so older
+    // clients and cached scripts get an empty list instead of an error.
+    json_out(['items' => [], 'next' => null]);
 }
 
 // Keeps a readable name, drops paths and control characters, and uses the real extension
@@ -186,8 +173,9 @@ function site_upload(): never
         'name' => clean_name((string) $upload['name'], $media['ext'], $kind),
         'mime' => $media['mime'],
         'source' => 'public',
-        // Unlisted uploads still get links, they just don't appear in the gallery
-        'in_gallery' => ($_POST['public'] ?? '1') !== '0',
+        // Every visitor upload is link-only: there is no public gallery and the page stays noindex.
+        // The direct link works for anyone who has it, which is exactly what "share a link" means.
+        'in_gallery' => false,
         'share_token' => new_token(),
         'uploader_ip' => $ip,
         'width' => $media['width'],
@@ -288,9 +276,9 @@ function site_llms(): never
     $lines = [
         "# $site",
         '',
-        "> Free image and video hosting with unlimited uploads, no account required. Upload an image",
-        '> or video and get a page link and a direct file link, plus Markdown, HTML and BBCode. Files up',
-        '> to ' . format_size(public_max_upload()) . ' each.',
+        "> Free image and video hosting: 100% free, no account, no ads, no public gallery. Upload an",
+        '> image or video and get a link-only page, a direct file link, and Markdown, HTML and BBCode.',
+        '> Files up to ' . format_size(public_max_upload()) . ' each; optional delete-after from 1 hour to 90 days.',
         '',
         '## Pages',
         "- [Upload an image or video]($url/): home page and uploader",
@@ -302,9 +290,9 @@ function site_llms(): never
     $lines[] = "- [Privacy Policy]($url/privacy)";
     $lines[] = '';
     $lines[] = '## Notes';
-    $lines[] = '- Public gallery images and videos have indexable pages at /s/<token>. Unlisted files are link-only and noindex.';
+    $lines[] = '- Every visitor upload is link-only: its page and file carry noindex and it is never added to the sitemap.';
     $lines[] = '- Images and videos are served from /i/<token>; previews from /t/<token>.jpg and /t/<token>.webp.';
-    $lines[] = '- An upload can be given a delete-after period (1 hour to 90 days); it then disappears from the gallery, the sitemap and its links.';
+    $lines[] = '- An upload can be given a delete-after period (1 hour to 90 days); when it expires its links return 410 and the file is deleted.';
     $lines[] = '- There is no public upload API. Uploads are rate-limited to '
         . (int) config('public_uploads_per_hour', 30) . ' per IP per hour.';
     header('Content-Type: text/plain; charset=utf-8');
@@ -313,25 +301,22 @@ function site_llms(): never
     exit;
 }
 
-// Home, content pages, legal pages, and every image in the public gallery (never unlisted ones), with image tags
+// Home, content pages and legal pages. Visitor uploads are link-only and never listed here, so the
+// sitemap stays small and contains only pages the site actually wants in search results.
 function site_sitemap(): never
 {
     $url = public_url();
     $x = fn(string $s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
-    // If the database is briefly unavailable the static pages should still be listable
-    try {
-        $latest = q_one(
-            'SELECT MAX(created_at) AS t FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
-             AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())'
-        )['t'] ?? null;
-    } catch (Throwable $e) {
-        $latest = null;
-    }
+    // The home page changes when the copy or the page templates change, not when someone uploads
+    $latest = max(array_map(
+        fn(string $f) => is_file($f) ? (int) filemtime($f) : 0,
+        array_merge([APP_DIR . '/pages.php', APP_DIR . '/views/home.html'], glob(APP_DIR . '/views/pages/*.html') ?: [])
+    ));
 
     $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
-        . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n"
-        . '<url><loc>' . $x("$url/") . '</loc>' . ($latest ? '<lastmod>' . gmdate('Y-m-d', strtotime("$latest UTC")) . '</lastmod>' : '')
-        . '<changefreq>hourly</changefreq><priority>1.0</priority></url>' . "\n";
+        . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n"
+        . '<url><loc>' . $x("$url/") . '</loc><lastmod>' . gmdate('Y-m-d', $latest ?: time())
+        . '</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>' . "\n";
     // Search-facing content pages, dated by the file that holds their copy
     foreach (content_meta() as $slug => $meta) {
         $file = APP_DIR . "/views/pages/$slug.html";
@@ -344,25 +329,6 @@ function site_sitemap(): never
         . '</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n"
         . '<url><loc>' . $x("$url/privacy") . '</loc><lastmod>' . $legalDate
         . '</lastmod><changefreq>yearly</changefreq><priority>0.2</priority></url>' . "\n";
-    // A sitemap holds at most 50,000 URLs
-    try {
-        $rows = q_all("SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL
-                       AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())
-                       AND (mime LIKE 'image/%' OR mime LIKE 'video/%') ORDER BY id DESC LIMIT 49000");
-    } catch (Throwable $e) {
-        $rows = [];
-    }
-    foreach ($rows as $row) {
-        $f = file_row($row);
-        $out .= '<url><loc>' . $x("$url/s/{$f['share_token']}") . '</loc><lastmod>' . gmdate('Y-m-d', strtotime($f['created_at'] . ' UTC'))
-            . '</lastmod>';
-        // The image sitemap extension only applies to images; video pages are listed as normal URLs
-        if (is_image($f)) {
-            $out .= '<image:image><image:loc>' . $x($url . raw_path($f)) . '</image:loc>'
-                . '<image:title>' . $x($f['name']) . '</image:title></image:image>';
-        }
-        $out .= '</url>' . "\n";
-    }
     $out .= '</urlset>' . "\n";
     header('Content-Type: application/xml; charset=utf-8');
     header('Cache-Control: public, max-age=3600');
