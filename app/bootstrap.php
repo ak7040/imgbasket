@@ -112,7 +112,14 @@ function serve_admin_asset(string $path): void
         '/assets/admin/app.js' => 'application/javascript',
         '/assets/admin/style.css' => 'text/css',
         '/icons.js' => 'application/javascript',
+        '/favicon.ico' => 'image/x-icon',
         '/favicon.svg' => 'image/svg+xml',
+        '/icon-192.png' => 'image/png',
+        '/icon-512.png' => 'image/png',
+        '/icon-maskable-192.png' => 'image/png',
+        '/icon-maskable-512.png' => 'image/png',
+        '/apple-touch-icon.png' => 'image/png',
+        '/site.webmanifest' => 'application/manifest+json',
         '/site.css' => 'text/css',
     ];
     if (!isset($types[$path])) return;

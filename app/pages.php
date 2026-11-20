@@ -39,8 +39,9 @@ function common_head(): string
     $verify = (string) config('google_site_verification', '');
     return implode("\n  ", array_filter([
         '<meta name="theme-color" content="#0b0d11">',
+        '<link rel="icon" href="/favicon.ico" sizes="32x32">',
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">',
-        '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+        '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">',
         '<link rel="manifest" href="/site.webmanifest">',
         '<link rel="preconnect" href="https://fonts.googleapis.com">',
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',

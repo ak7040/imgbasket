@@ -237,7 +237,8 @@ index.php            Front controller (all routes)
 .user.ini            PHP upload and time limits
 site.css, site.js    Public site
 qrcode.js            QR code generator (qrcode-generator 1.4.4, MIT) used on upload results
-icons.js, favicon.svg, apple-touch-icon.png, icon-192.png, icon-512.png, site.webmanifest
+icons.js, favicon.svg, favicon.ico, site.webmanifest
+icon-192.png, icon-512.png, icon-maskable-192.png, icon-maskable-512.png, apple-touch-icon.png
 og-image.png         Share image for the home page
 assets/admin/        Admin page script and styles
 extras/admin-subdomain/  Bridge files for an admin subdomain with its own folder
@@ -246,5 +247,6 @@ app/                 PHP code, config, page templates (views/), and storage/ (no
   telegram.php       Storage switch; storage_saved.php (Saved Messages), storage_bot.php (bot)
   videos.php         Video checks, MP4 metadata, and FFmpeg poster frames
 vendor/              MadelineProto and its libraries (composer.json); blocked from the web
-scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php, indexnow.sh
+scripts/             dev.sh (run locally), package.sh (build the upload zip), dev-router.php, indexnow.sh,
+                     make-icons.py (rebuild the icon set from the master artwork)
 ```
