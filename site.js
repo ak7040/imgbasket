@@ -1,4 +1,4 @@
-// Public homepage: upload images and browse the gallery
+// Public homepage: upload images
 const $ = (sel) => document.querySelector(sel);
 
 function el(tag, props = {}, ...children) {
@@ -20,15 +20,6 @@ function formatSize(bytes) {
   let i = 0;
   while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
   return `${+bytes.toFixed(i && bytes < 100 ? 1 : 0)} ${units[i]}`;
-}
-
-function timeAgo(sqlDate) {
-  const s = (Date.now() - new Date(sqlDate.replace(' ', 'T') + 'Z')) / 1000;
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(sqlDate.replace(' ', 'T') + 'Z').toLocaleDateString();
 }
 
 function toast(message, { error = false } = {}) {
@@ -122,8 +113,7 @@ let uploading = false;
 function enqueue(fileList) {
   const files = [...fileList];
   for (const file of files) {
-    // Captured now, so changing the switch later doesn't affect images already queued
-    const item = { file, isPublic: $('#public-toggle').checked };
+    const item = { file };
     const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
     item.status = el('span', { class: 'status', textContent: 'Waiting…' });
     item.bar = el('div');
@@ -158,8 +148,6 @@ async function processQueue() {
 function upload(item) {
   return new Promise((resolve) => {
     const form = new FormData();
-    // Fields must come before the file so the server sees them when the upload arrives
-    form.append('public', item.isPublic ? '1' : '0');
     form.append('image', item.file);
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload');
@@ -181,10 +169,9 @@ function upload(item) {
         fail(item, body.error || `Upload failed (${xhr.status})`);
       } else {
         item.node.classList.add('done');
-        item.status.textContent = body.in_gallery ? 'Published' : 'Uploaded · Unlisted';
+        item.status.textContent = 'Uploaded';
         item.bar.parentElement.remove();
         item.body.append(shareBox(body));
-        if (body.in_gallery) gallery.prepend(body);
       }
       resolve();
     };
@@ -201,11 +188,8 @@ $('#file-input').onchange = (e) => {
   e.target.value = '';
 };
 const pick = () => $('#file-input').click();
-$('#hero').onclick = (e) => {
-  if (!e.target.closest('#visibility')) pick();
-};
+$('#hero').onclick = pick;
 $('#hero').onkeydown = (e) => {
-  if (e.target.closest('#visibility')) return;
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
 };
 $('#header-upload').onclick = pick;
@@ -242,118 +226,6 @@ document.addEventListener('paste', (e) => {
   enqueue(files.map((f, i) => (f.name === 'image.png' ? new File([f], `pasted-${stamp}${i ? `-${i}` : ''}.png`, { type: f.type }) : f)));
 });
 
-// ---------- Gallery (masonry with infinite scroll) ----------
-
-const gallery = {
-  items: [],
-  cursor: null,
-  done: false,
-  loading: false,
-  columns: 0,
-
-  columnCount() {
-    const width = $('#gallery').clientWidth;
-    if (width < 520) return 2;
-    return Math.min(5, Math.max(2, Math.floor((width + 14) / (250 + 14))));
-  },
-
-  // Places each card in the currently shortest column
-  layout() {
-    const count = this.columnCount();
-    this.columns = count;
-    const cols = Array.from({ length: count }, () => el('div', { class: 'col' }));
-    const heights = new Array(count).fill(0);
-    for (const item of this.items) {
-      const i = heights.indexOf(Math.min(...heights));
-      cols[i].append(item.node ??= this.card(item));
-      heights[i] += item.height && item.width ? item.height / item.width : 1;
-    }
-    $('#gallery').replaceChildren(...cols);
-    $('#gallery-empty').hidden = this.items.length > 0 || !this.done;
-  },
-
-  card(item) {
-    const ratio = item.width && item.height ? `${item.width} / ${item.height}` : '1 / 1';
-    return el('a', { class: 'card', href: item.page_url, style: `aspect-ratio:${ratio}` },
-      el('img', {
-        src: item.thumb || item.src,
-        alt: item.name,
-        loading: 'lazy',
-        decoding: 'async',
-        onload: (e) => {
-          e.target.classList.add('loaded');
-          // Browsers apply photo rotation, so trust the rendered size over the stored one
-          const { naturalWidth: w, naturalHeight: h } = e.target;
-          if (w && h) e.target.parentElement.style.aspectRatio = `${w} / ${h}`;
-        },
-        // The file was removed in Telegram (the site cleans the row up on this request): drop the
-        // tile rather than leaving a blank card in the grid
-        onerror: () => {
-          gallery.items = gallery.items.filter((x) => x !== item);
-          gallery.layout();
-        },
-      }),
-      el('div', { class: 'shade' },
-        el('div', { class: 'name', textContent: item.name }),
-        el('div', { class: 'meta', textContent: `${formatSize(item.size)} · ${timeAgo(item.created_at)}` })));
-  },
-
-  async loadMore() {
-    if (this.loading || this.done) return;
-    this.loading = true;
-    $('#loading').hidden = false;
-    try {
-      const res = await fetch(`/api/gallery${this.cursor ? `?before=${this.cursor}` : ''}`);
-      const data = await res.json();
-      this.items.push(...data.items);
-      this.cursor = data.next;
-      this.done = !data.next;
-      this.layout();
-    } catch {
-      toast('Could not load the gallery', { error: true });
-    } finally {
-      this.loading = false;
-      $('#loading').hidden = true;
-    }
-  },
-
-  prepend(item) {
-    this.items.unshift(item);
-    this.layout();
-  },
-};
-
-new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) gallery.loadMore();
-}, { rootMargin: '800px' }).observe($('#sentinel'));
-
-let resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    if (gallery.columnCount() !== gallery.columns) gallery.layout();
-  }, 150);
-});
-
-// ---------- Visibility switch ----------
-
-function renderVisibility() {
-  const on = $('#public-toggle').checked;
-  $('#visibility-hint').textContent = on
-    ? 'Anyone visiting this site can see it'
-    : 'Unlisted: only people you send the link to can see it';
-  $('#drop-hint').textContent = on ? 'Images will be published to the gallery' : 'Images will be unlisted (link only)';
-}
-
-$('#public-toggle').onchange = (e) => {
-  try { localStorage.setItem('showInGallery', e.target.checked ? '1' : '0'); } catch {}
-  renderVisibility();
-};
-try {
-  if (localStorage.getItem('showInGallery') === '0') $('#public-toggle').checked = false;
-} catch {}
-renderVisibility();
-
 // ---------- Boot ----------
 
 hydrateIcons();
@@ -366,4 +238,3 @@ fetch('/api/config')
       el('kbd', { textContent: 'Ctrl' }), ' + ', el('kbd', { textContent: 'V' }), ' to paste');
   })
   .catch(() => {});
-gallery.loadMore();

@@ -171,41 +171,6 @@ function render_view(string $name, array $vars = []): string
     return strtr((string) file_get_contents(APP_DIR . "/views/$name"), $replace);
 }
 
-// The first page of the public gallery, rendered into the HTML so crawlers get real links to image
-// pages even before the gallery script runs. The script replaces it with its own masonry layout.
-function recent_gallery_html(int $limit = 12): string
-{
-    try {
-        $rows = q_all(
-            'SELECT * FROM files WHERE in_gallery = 1 AND share_token IS NOT NULL AND mime LIKE \'image/%\''
-            . ' ORDER BY id DESC LIMIT ' . $limit
-        );
-    } catch (Throwable $e) {
-        return '';
-    }
-    if (!$rows) return '';
-
-    $cols = [[], [], []];
-    $i = 0;
-    foreach ($rows as $row) {
-        $f = file_row($row);
-        $ratio = $f['width'] && $f['height'] ? 'aspect-ratio:' . $f['width'] . ' / ' . $f['height'] . ';' : '';
-        $thumb = $f['mime'] === 'image/gif' ? raw_path($f) : '/t/' . $f['share_token'] . '.webp';
-        $dims = $f['width'] ? ' width="' . (int) $f['width'] . '" height="' . (int) $f['height'] . '"' : '';
-        $cols[$i++ % 3][] = '<a class="card" href="' . esc(public_url() . '/s/' . $f['share_token']) . '" style="' . $ratio . '">'
-            . '<img class="loaded" src="' . esc($thumb) . '" alt="' . esc($f['name']) . '"' . $dims
-            . ' loading="lazy" decoding="async" onerror="this.closest(\'.card\').remove()">'
-            . '<div class="shade"><div class="name">' . esc($f['name']) . '</div>'
-            . '<div class="meta">' . esc(format_size($f['size'])) . ' · '
-            . esc(gmdate('M j, Y', strtotime($f['created_at'] . ' UTC'))) . '</div></div></a>';
-    }
-    $html = '';
-    foreach ($cols as $col) {
-        if ($col) $html .= '<div class="col">' . implode('', $col) . '</div>';
-    }
-    return $html;
-}
-
 function home_page(): string
 {
     $url = public_url();
@@ -239,7 +204,6 @@ function home_page(): string
                 'featureList' => [
                     'Image upload without an account',
                     'Direct image links, Markdown, HTML and BBCode',
-                    'Public gallery or unlisted images',
                     'Uploads up to ' . format_size(public_max_upload()) . ' per image',
                 ],
                 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
@@ -249,7 +213,6 @@ function home_page(): string
     return render_view('home.html', [
         'JSONLD' => $ld,
         'MAX_UPLOAD' => esc(format_size(public_max_upload())),
-        'RECENT' => recent_gallery_html(),
     ]);
 }
 

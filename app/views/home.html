@@ -38,27 +38,9 @@
       <p>Drop images here, paste from your clipboard, or choose files. No account, unlimited uploads, up to {{MAX_UPLOAD}} per image.</p>
       <span class="btn primary"><span data-icon="upload"></span>Choose images</span>
       <p class="hint" id="limits"></p>
-      <label class="visibility" id="visibility">
-        <input type="checkbox" id="public-toggle" checked>
-        <span class="switch"></span>
-        <span class="visibility-text">
-          <strong>Show in public gallery</strong>
-          <span id="visibility-hint">Anyone visiting this site can see it</span>
-        </span>
-      </label>
     </section>
 
     <div class="results" id="results"></div>
-
-    <section aria-labelledby="recent-title">
-      <div class="section-head">
-        <h2 id="recent-title">Recent uploads</h2>
-      </div>
-      <div class="masonry" id="gallery">{{RECENT}}</div>
-      <div class="gallery-empty" id="gallery-empty" hidden>No images yet. Be the first to upload one.</div>
-      <div class="loading-more" id="loading" hidden><div class="spinner"></div></div>
-      <div class="sentinel" id="sentinel"></div>
-    </section>
 
     <section class="features" aria-labelledby="unlimited-title">
       <h2 id="unlimited-title">Unlimited free image hosting, without the catches</h2>
@@ -70,14 +52,11 @@
         <p>Every upload gets two links. The <strong>page link</strong> opens the image on {{SITE_NAME}} with
           copy-ready Markdown, HTML and BBCode. The <strong>direct link</strong> points straight at the file,
           so it works in forums, Reddit, Discord, a blog, or an <code>&lt;img&gt;</code> tag on your own site.</p>
-        <p>Uploads are public by default, so they can appear in the gallery and in image search results. Turn
-          off “Show in public gallery” before uploading and the image becomes unlisted: only people you send
-          the link to can open it, and it stays out of search engines.</p>
+        <p>Uploads are public, so an image can appear in image search results once it has been shared.</p>
         <ul class="checks">
           <li>No account, no email, no verification</li>
           <li>Up to {{MAX_UPLOAD}} per image, with the original file kept</li>
           <li>Direct links, BBCode, Markdown and HTML for forums and blogs</li>
-          <li>Public gallery or unlisted, link-only uploads</li>
           <li>No ads and no tracking cookies</li>
           <li>JPG, PNG, GIF, WebP, AVIF and BMP, including animated GIFs</li>
         </ul>
@@ -154,11 +133,6 @@
           <p>Get a page link, a direct image link, and ready-made Markdown, HTML and BBCode for forums, Reddit and blogs.</p>
         </article>
         <article class="feature">
-          <span class="feature-icon" data-icon="eyeOff"></span>
-          <h3>Public or unlisted</h3>
-          <p>Show an image in the gallery, or keep it unlisted so only people with the link can see it.</p>
-        </article>
-        <article class="feature">
           <span class="feature-icon" data-icon="image"></span>
           <h3>Rich link previews</h3>
           <p>Shared links show the picture in WhatsApp, Telegram, Discord, X and Facebook.</p>
@@ -210,11 +184,6 @@
           then copy and paste it into your post.</p>
       </details>
       <details>
-        <summary>Can I keep an image private?</summary>
-        <p>Turn off "Show in public gallery" before uploading. The image won't appear in the gallery or in
-          search engines, but anyone you send the link to can open it.</p>
-      </details>
-      <details>
         <summary>Which file types can I upload?</summary>
         <p>JPG, PNG, GIF (animated too), WebP, AVIF and BMP images, up to {{MAX_UPLOAD}} each.</p>
       </details>
@@ -242,7 +211,7 @@
     <div class="drop-box">
       <span data-icon="upload"></span>
       <h2>Drop to upload</h2>
-      <p class="muted" id="drop-hint">Images will be published to the gallery</p>
+      <p class="muted" id="drop-hint">Drop anywhere to upload</p>
     </div>
   </div>
   <div class="toasts" id="toasts"></div>
