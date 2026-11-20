@@ -155,15 +155,11 @@ kbd {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  display: inline-grid;
-  place-items: center;
-  background: linear-gradient(135deg, #7f72ff, #4f8cff);
-  color: #fff;
+  display: inline-block;
+  background: url('/logo-mark.png') center / contain no-repeat;
 }
-.mark svg { width: 16px; height: 16px; stroke-width: 2.2; }
 .brand-lg { font-size: 18px; justify-content: center; margin-bottom: 22px; }
 .brand-lg .mark { width: 38px; height: 38px; border-radius: 10px; }
-.brand-lg .mark svg { width: 20px; height: 20px; }
 
 .nav { display: flex; flex-direction: column; gap: 2px; }
 .nav-item {

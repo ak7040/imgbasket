@@ -1,8 +1,6 @@
 // Inline SVG icons (24x24, stroke based). Use icon('name') or <span data-icon="name"></span>.
 // Shared by the admin app and the public site.
 const ICONS = {
-  // ImgBasket mark: a basket with a photo inside
-  logo: '<rect x="7" y="2.5" width="10" height="7" rx="1.5"/><path d="m9 8 2-2 2 1.5 2-2"/><path d="M2.5 11h19"/><path d="m4 11 1.6 7.6A2 2 0 0 0 7.56 20h8.88a2 2 0 0 0 1.96-1.4L20 11"/><path d="M9 14v3M15 14v3M12 14v3"/>',
   upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',

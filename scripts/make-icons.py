@@ -153,6 +153,9 @@ def main() -> None:
     fav_tile = tile(main, 256, 0.84)
     save_svg(tile(main, 128, 0.84), os.path.join(out, "favicon.svg"))
 
+    # In-page brand mark (header, footer, admin); simplified like the favicon.
+    save_png(tile(main, 128, 0.84), os.path.join(out, "logo-mark.png"))
+
     ico_path = os.path.join(out, "favicon.ico")
     fav_tile.save(ico_path, "ICO", sizes=[(16, 16), (32, 32), (48, 48)])
     print(f"  {'favicon.ico':24} 16/32/48               {os.path.getsize(ico_path) / 1024:6.1f} KB")

@@ -74,12 +74,9 @@ button, input { font: inherit; color: inherit; }
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  display: inline-grid;
-  place-items: center;
-  background: linear-gradient(135deg, #7f72ff, #4f8cff);
-  color: #fff;
+  display: inline-block;
+  background: url('/logo-mark.png') center / contain no-repeat;
 }
-.mark svg { width: 17px; height: 17px; stroke-width: 2.2; }
 
 /* Buttons */
 .btn {
@@ -482,7 +479,6 @@ kbd {
 }
 .site-footer .brand { font-size: 14px; }
 .site-footer .mark { width: 26px; height: 26px; border-radius: 7px; }
-.site-footer .mark svg { width: 15px; height: 15px; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
 .footer-links a { color: var(--muted); font-size: 14px; }
 .footer-links a:hover { color: var(--text); }

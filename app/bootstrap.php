@@ -120,6 +120,7 @@ function serve_admin_asset(string $path): void
         '/icon-maskable-512.png' => 'image/png',
         '/apple-touch-icon.png' => 'image/png',
         '/site.webmanifest' => 'application/manifest+json',
+        '/logo-mark.png' => 'image/png',
         '/site.css' => 'text/css',
     ];
     if (!isset($types[$path])) return;

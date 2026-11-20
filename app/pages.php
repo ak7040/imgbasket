@@ -39,10 +39,10 @@ function common_head(): string
     $verify = (string) config('google_site_verification', '');
     return implode("\n  ", array_filter([
         '<meta name="theme-color" content="#0b0d11">',
-        '<link rel="icon" href="/favicon.ico" sizes="32x32">',
-        '<link rel="icon" href="/favicon.svg" type="image/svg+xml">',
-        '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">',
-        '<link rel="manifest" href="/site.webmanifest">',
+        '<link rel="icon" href="' . esc(asset_url('/favicon.ico')) . '" sizes="32x32">',
+        '<link rel="icon" href="' . esc(asset_url('/favicon.svg')) . '" type="image/svg+xml">',
+        '<link rel="apple-touch-icon" sizes="180x180" href="' . esc(asset_url('/apple-touch-icon.png')) . '">',
+        '<link rel="manifest" href="' . esc(asset_url('/site.webmanifest')) . '">',
         '<link rel="preconnect" href="https://fonts.googleapis.com">',
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
         '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
@@ -58,7 +58,7 @@ function site_footer(): string
     return <<<HTML
 <footer class="site-footer">
     <div class="footer-inner">
-      <a class="brand" href="/"><span class="mark" data-icon="logo"></span>$site</a>
+      <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>$site</a>
       <nav class="footer-links" aria-label="Footer">
         <a href="/">Upload</a>
         <a href="/imgur-alternative">Imgur alternative</a>
@@ -248,7 +248,7 @@ function layout(array $o): string
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/"><span class="mark" data-icon="logo"></span>$site</a>
+    <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>$site</a>
     <a class="btn primary" href="/"><span data-icon="upload"></span>Upload</a>
   </header>
   $body
